@@ -1,10 +1,14 @@
 // import the API.
 // See xxx for the javadocs.
 import bc.*;
+import java.util.*;
 
 public class Player {
 
-public static int holder = 0;
+private static int holder = 0;
+
+//Holds all pth objects for robots that are currently enroute.
+private static List<Path> activePaths = new LinkedList<Path>(); 
 
     public static void main(String[] args) {
         // MapLocation is a data structure you'll use a lot.
@@ -24,6 +28,15 @@ public static int holder = 0;
 
         while (true) {
             System.out.println("Current round: "+gc.round());
+
+            //This little loop marchs all of our robots with paths forward one step and removes them when their paths are completed.
+            Iterator<Path> it = activePaths.iterator();
+            while(it.hasNext()) {
+                Path path = it.next();
+                if (path.continuePath())
+                    it.remove();
+            }
+
             // VecUnit is a class that you can think of as similar to ArrayList<Unit>, but immutable.
             VecUnit units = gc.myUnits();
             for (int i = 0; i < units.size(); i++) {
