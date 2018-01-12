@@ -8,7 +8,7 @@ public class Pathfinder {
 	}
 
 	//Takes a robot ID and a desired destination creates and returns a path containing the robot. Returns null if no path exists.
-	public Path findPath(int unitID, MapLocation destination) {
+	public Path findPath(Unit unit, MapLocation destination) {
 		return null;
 	}
 
