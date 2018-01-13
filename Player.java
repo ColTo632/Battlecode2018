@@ -97,13 +97,13 @@ public class Player {
 
     public static void activateFactory(Unit unit) {
         // If no workers exist build one.  
-        if ((workerCount == 0) && (unit.canProduceRobot(unit.id(), UnitType.Worker))) {
-            unit.produceRobot(unit.id(), UnitType.Worker);
+        if ((workerCount == 0) && (gc.canProduceRobot(unit.id(), UnitType.Worker))) {
+            gc.produceRobot(unit.id(), UnitType.Worker);
         }
 
         // If we have engough money build a ranger.
-        else if ((gc.karbonite() > RANGER_THRESHHOLD) && (unit.canProduceRobot(unit.id(), UnitType.Ranger)) {
-            unit.produceRobot(unit.id(), UnitType.Ranger);
+        else if ((gc.karbonite() > RANGER_THRESHHOLD) && (gc.canProduceRobot(unit.id(), UnitType.Ranger))) {
+            gc.produceRobot(unit.id(), UnitType.Ranger);
         }
 
         // If we have any units in the garrison unload and activate them.
