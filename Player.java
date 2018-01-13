@@ -8,9 +8,12 @@ public class Player {
     //Important global variables
     private static MapLocation base; 
     private static MapLocation enemyBase;
+
     private static long MAX_WORKER_COUNT = 15; 
     private static long workerCount = 0;
+
     private static short FACTORY_THRESHHOLD = 120;
+    private static short RANGER_THRESHHOLD = 20;
 
     // Holds all path objects for robots that are currently enroute.
     private static List<Path> activePaths = new LinkedList<Path>(); 
@@ -31,7 +34,6 @@ public class Player {
         // We need to set our base location here
 
         while (true) {
-            //workerCount = gc.senseNearbyUnitsByType(new MapLocation(Planet.Earth, 0,0), 100, UnitType.Worker).size();
             System.out.println("Current round: "+gc.round() +"workerCount: "+ workerCount);
 
 
@@ -94,6 +96,26 @@ public class Player {
     }
 
     public static void activateFactory(Unit unit) {
+        // If no workers exist build one.  
+        if ((workerCount == 0) && (unit.canProduceRobot(unit.id(), UnitType.Worker))) {
+            unit.produceRobot(unit.id(), UnitType.Worker);
+        }
+
+        // If we have engough money build a ranger.
+        else if ((gc.karbonite() > RANGER_THRESHHOLD) && (unit.canProduceRobot(unit.id(), UnitType.Ranger)) {
+            unit.produceRobot(unit.id(), UnitType.Ranger);
+        }
+
+        // If we have any units in the garrison unload and activate them.
+        if (unit.structureGarrison().size() != 0) {
+            for(Direction direction : Direction.values()) {
+                if (gc.canUnload(unit.id(), direction)){
+                    gc.unload(unit.id(), direction);
+                    activateUnit(gc.senseUnitAtLocation(unit.location().mapLocation().add(direction)));
+                }
+            }
+        }
+
         return;
     }
 
@@ -211,14 +233,17 @@ public class Player {
         return;
     }
 
+    // TODO:
     public static boolean isVisible(MapLocation loc) {
         return false;
     }
 
+    // TODO:
     public static List<MapLocation> initalizeResources() {
         return new LinkedList<MapLocation>();
     }
 
+    // TODO:
     public static void updateResources() {
         return;
     }
