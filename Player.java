@@ -4,8 +4,8 @@ import bc.*;
 import java.util.*;
 
 public class Player {
-
-    //Important global variables
+	
+		    //Important global variables
     private static MapLocation base; 
     private static MapLocation enemyBase;
 
@@ -15,58 +15,62 @@ public class Player {
     private static short FACTORY_THRESHHOLD = 120;
     private static short RANGER_THRESHHOLD = 20;
 
-    // Holds all path objects for robots that are currently enroute.
-    private static List<Path> activePaths = new LinkedList<Path>(); 
+		private static MapSurface topleftCorner1;
+		private static MapSurface topleftCorner2;
+		private static MapSurface topleftCorner3;
+		private static MapSurface topleftCorner4;
+		//wip
+		private static MapSurface workFactory;
+		//wip
+		private static MapSurface currentresource;
+		private static PlanetMap PM;  
+		private static List<MapLocation> resourceDeposits;
 
-    // Holds the location of all Karbonite locations currently known.
-    private static List<MapLocation> resourceDeposits;
+    private static GameController gc;	
+		private static Team ourTeam;
+		
+		public static void main(String[] args) {
+			
+			System.out.println("Init Player");
 
-    //Game controller and pathfinder
-    private static Pathfinder pf;
-    private static GameController gc;
-
-    public static void main(String[] args) {
         // Connect to the manager, starting the game
-        gc = new GameController();
-        pf = new Pathfinder();
+			gc = new GameController();
+			ourTeam = gc.team();
+			PM = gc.startingMap(gc.planet());
+			
+			
+			System.out.println("Player for " + PM.getPlanet());
+			
+			topleftCorner1 = new MapSurface(PM, 5, 5);
+			topleftCorner2 = new MapSurface(PM, 15, 5);
+			topleftCorner3 = new MapSurface(PM, 5, 15);
+			topleftCorner4 = new MapSurface(PM, 15, 15);
+			workFactory = new MapSurface(PM, 19, 1);
+			currentresource = new MapSurface(PM, 1, 19);
 
-        resourceDeposits = initalizeResources();
-        // We need to set our base location here
-
-        while (true) {
-            System.out.println("Current round: "+gc.round() +"workerCount: "+ workerCount);
+			resourceDeposits = initalizeResources();
+			// We need to set our base location here
 
 
+			while (true) {
+				//workerCount = gc.senseNearbyUnitsByType(new MapLocation(Planet.Earth, 0,0), 100, UnitType.Worker).size();
+				System.out.println("Current round: "+gc.round() +" workerCount: "+ workerCount);
 
-            VecUnit units = gc.myUnits();
-            for (int i = 0; i < units.size(); i++) {
-                Unit unit = units.get(i);
 
-                updateResources();
 
-                activateUnit(unit);
+				VecUnit units = gc.myUnits();
+				for (int i = 0; i < units.size(); i++) {
+					Unit unit = units.get(i);
 
-                moveRobots();
-            }
+					updateResources();
 
-            // Submit the actions we've done, and wait for our next turn.
-            gc.nextTurn();
-        }
-    }
+					activateUnit(unit);
+				}
 
-    // Progress all activate paths
-    public static void moveRobots() {
-    // This loop marchs all of our robots with paths forward one step and removes them from the paths list
-    // when they reach their destination.
-        Iterator<Path> it = activePaths.iterator();
-        while(it.hasNext()) {
-            Path path = it.next();
-            if (path != null) {
-                if (path.continuePath())
-                    it.remove();
-            }
-        }
-    }
+				// Submit the actions we've done, and wait for our next turn.
+				gc.nextTurn();
+			}
+    }    
 
     public static void activateUnit(Unit unit) {
         UnitType type = unit.unitType();
@@ -132,20 +136,44 @@ public class Player {
     }
 
     public static void activateRanger(Unit unit) {
+			Location local = unit.location();
+			if(!local.isOnMap()){
+				return;
+			}
+			MapLocation unitLocation = unit.location().mapLocation();
+            if (PM.onMap(unitLocation)){
+                VecUnit nearby = gc.senseNearbyUnits(unitLocation, 70);
+								for (int i = 0; i < nearby.size(); i++) {
+									Unit other = nearby.get(i);
+									if(other.team() != ourTeam && gc.isAttackReady(unit.id())){										
+										System.out.println("ranger done spotted a badguy");
+										if (gc.canAttack(unit.id(), other.id())){
+											System.out.println("ranger can attack that guy");
+											if(unit.location().isOnMap() && other.location().isOnMap()){
+												System.out.println("ranger gon beatemup");
+												gc.attack(unit.id(), other.id());
+												break;
+											}
+										}
+									}
+								}
+								//add stuff about how rangers move here
+						}
         return;
     }
 
     public static void activateRocket(Unit unit) {
         return;
     }
-
-    public static void activateWorker(Unit unit) {
+		
+		public static void activateWorker(Unit unit) {
         MapLocation unitLocation = unit.location().mapLocation();
         VecUnit adjacentFactories = gc.senseNearbyUnitsByType(unitLocation, 1, UnitType.Factory);
 
-        // Retreat
+        // Retreat ( isVisible currently unimplemented)
         if (isVisible(unitLocation)) {
-            activePaths.add(pf.findPath(unit, base));
+            //activepaths depreciated
+						//activePaths.add(pf.findPath(unit, base));
         } 
 
         else {
@@ -211,8 +239,10 @@ public class Player {
                 Unit factory = nearbyFactories.get(i);
 
                 if (factory.health() < factory.maxHealth()) {
-                    activePaths.add(pf.findPath(unit, factory.location().mapLocation()));
-                    return;
+									if (gc.isMoveReady(unit.id()) && gc.canMove(unit.id(), walkOnGrid(unit, workFactory, gc))) {
+										gc.moveRobot(unit.id(), walkOnGrid(unit, workFactory, gc));
+									}
+									return;
                 }
             }
 
@@ -225,9 +255,11 @@ public class Player {
                     distance = travelDistance;
                     target = location;
                 }
-            }  
-            activePaths.add(pf.findPath(unit, target));         
-
+            }
+						if (gc.isMoveReady(unit.id()) && gc.canMove(unit.id(), walkOnGrid(unit, currentresource, gc))) {
+							gc.moveRobot(unit.id(), walkOnGrid(unit, currentresource, gc));
+						}
+						return;
         }
 
         return;
@@ -238,14 +270,31 @@ public class Player {
         return false;
     }
 
+
     // TODO:
-    public static List<MapLocation> initalizeResources() {
-        return new LinkedList<MapLocation>();
+    
+    public static ArrayList<MapLocation> initalizeResources() {
+        return new ArrayList<MapLocation>();
+
     }
 
     // TODO:
     public static void updateResources() {
         return;
     }
-
+		
+		public static Direction walkOnGrid(Unit u, MapSurface ms, GameController gc)
+		{
+			MapLocation unitLocation = u.location().mapLocation();			
+			for(Direction d: Direction.values()){
+				MapLocation newML = unitLocation.add(d);
+				//if the node exists and has no text and is pathable
+				if(PM.onMap(newML) && ms.Surface[newML.getX()][newML.getY()] == ms.Surface[unitLocation.getX()][unitLocation.getY()] - 1 && PM.isPassableTerrainAt(newML) == 1 && gc.canMove(u.id(), d)){
+					//record it
+					return d;
+				}			
+			}
+			
+			return Direction.Center;
+		}
 }
