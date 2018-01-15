@@ -11,6 +11,7 @@ public class Player {
 
     private static long MAX_WORKER_COUNT = 15; 
     private static long workerCount = 0;
+		private static long thisTurnsWorkerCount = 0;
 
     private static short FACTORY_THRESHHOLD = 120;
     private static short RANGER_THRESHHOLD = 20;
@@ -52,10 +53,10 @@ public class Player {
 			// We need to set our base location here
 
 
-			while (true) {
+			while (true) {				
 				//workerCount = gc.senseNearbyUnitsByType(new MapLocation(Planet.Earth, 0,0), 100, UnitType.Worker).size();
 				System.out.println("Current round: "+gc.round() +" workerCount: "+ workerCount);
-
+				thisTurnsWorkerCount = 0;
 
 
 				VecUnit units = gc.myUnits();
@@ -66,7 +67,7 @@ public class Player {
 
 					activateUnit(unit);
 				}
-
+				workerCount = thisTurnsWorkerCount;
 				// Submit the actions we've done, and wait for our next turn.
 				gc.nextTurn();
 			}
@@ -95,13 +96,14 @@ public class Player {
                 break;
             case Worker:
                 activateWorker(unit);
+								thisTurnsWorkerCount++;
                 break;
         }
     }
 
     public static void activateFactory(Unit unit) {
         // If no workers exist build one.  
-        if ((workerCount == 0) && (gc.canProduceRobot(unit.id(), UnitType.Worker))) {
+        if ((workerCount < 2) && (gc.canProduceRobot(unit.id(), UnitType.Worker))) {
             gc.produceRobot(unit.id(), UnitType.Worker);
         }
 
