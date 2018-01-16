@@ -217,6 +217,30 @@ public class Player {
     }
 
     public static void activateRocket(Unit unit) {
+        Location location = unit.location();
+        if (!location.isOnMap) {
+            return;
+        }
+        MapLocation unitLocation = location.MapLocation();
+
+        // If the rocket is full and no one is around it take off 
+        if ((gc.round() == 749) || ((unit.structureGarrison().size() == unit.structureMaxCapacity) && (gc.senseNearbyUnitsByTeam(unitLocation, 1, ourTeam).isEmpty())) {
+            MapLocation landingZone = findLandingZone();
+            if (gc.canLaunchRocket(unit.id(), landingZone)) {
+                gc.LaunchRocket(unit.id(), landingZone);
+            }
+        }
+
+        // If on mars and garrison has units unload them 
+        if ((unit.structureGarrison().size() != 0) && location.isOnPlanet(Planet.Mars)) {
+            for(Direction direction : Direction.values()) {
+                if (gc.canUnload(unit.id(), direction)){
+                    gc.unload(unit.id(), direction);
+                    activateUnit(gc.senseUnitAtLocation(unit.location().mapLocation().add(direction)));
+                }
+            }
+        }
+
         return;
     }
 		
@@ -290,6 +314,17 @@ public class Player {
                     }
                 }
             }
+
+            // Build a rocket
+            else if ((gc.karbonite() > ROCKET_THRESHHOLD) && adjacentStructures.size() == 0){
+                for (Direction direction : Direction.values()) {
+                    if (gc.canBlueprint(unit.id(), UnitType.Rocket, direction)){
+                        gc.blueprint(unit.id(), UnitType.Rocket, direction);
+                        break;
+                    }
+                }
+            }
+
 
             // Harvest Karbonite
             for (Direction direction : Direction.values()) {
