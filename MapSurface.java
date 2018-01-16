@@ -51,7 +51,7 @@ public class MapSurface {
 		//while there is a node in consideration
 	}
 	
-	public MapSurface(PlanetMap pmWorld, ArrayList<MapLocation> lstML) {
+	public MapSurface(PlanetMap pmWorld, List<MapLocation> lstML) {
 		
 		System.out.println("Init MapSurface");
 		CenterX = -1;

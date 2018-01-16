@@ -25,6 +25,8 @@ public class Player {
     private static GameController gc;	
 	private static Team ourTeam;
 	
+	public static MapHandler explorationMap;
+	
 	public static void main(String[] args) {
 		
     	System.out.println("Init Player");
@@ -48,6 +50,8 @@ public class Player {
     	System.out.println("Player for " + PM.getPlanet());
 
     	resourceDeposits = initalizeResources();
+			
+			explorationMap = new MapHandler(null, null, gc);
     	// We need to set our base location here
 
 		while (true) {				
@@ -55,7 +59,22 @@ public class Player {
 			System.out.println("Current round: "+gc.round() +" workerCount: "+ workerCount+" k: "+ gc.karbonite());
 			thisTurnsWorkerCount = 0;
 
-
+			VecUnit explorers = gc.senseNearbyUnitsByType(new MapLocation(Planet.Earth, 0,0), 2500, UnitType.Ranger);
+			
+			
+			//exshplorr
+			List<MapLocation> exploredPlaces = new ArrayList<MapLocation>();
+			for (int i = 0; i < explorers.size(); i++) {
+				Unit unit = explorers.get(i);				
+				if(unit.team() == ourTeam){
+					exploredPlaces.add(unit.location().mapLocation());
+				}
+			}			
+			MapSurface explorationSurface = new MapSurface(PM, exploredPlaces);
+			explorationMap.ms = explorationSurface;
+			
+			
+			
 			VecUnit units = gc.myUnits();
 			for (int i = 0; i < units.size(); i++) {
 				Unit unit = units.get(i);
@@ -157,7 +176,11 @@ public class Player {
 						}
 					}
 				}
-				//add stuff about how rangers move here
+				if(gc.senseNearbyUnitsByType(unit.location().mapLocation(), 60, UnitType.Ranger).size() > 0)
+				{
+					moveUnit(unit, explorationMap.walkOnGrid(-1, unit));					
+				}
+				
 			}
         return;
     }
@@ -260,8 +283,8 @@ public class Player {
 
             if (target != null) {
                 updateHashMaps(unit, target);
-                mapFinder.get(unit).walkOnGrid(-1); 
-                moveUnit(unit, direction);
+                Direction dir = mapFinder.get(unit).walkOnGrid(-1); 
+                moveUnit(unit, dir);
                 return;
             }
 
