@@ -5,7 +5,7 @@ import java.util.*;
 
 public class Player {
 	
-		    //Important global variables
+	//Important global variables
     private static MapLocation base; 
     private static MapLocation enemyBase;
 
@@ -27,19 +27,28 @@ public class Player {
 	
 	public static void main(String[] args) {
 		
-	System.out.println("Init Player");
+    	System.out.println("Init Player");
 
-    // Connect to the manager, starting the game
-		gc = new GameController();
-		ourTeam = gc.team();
-		PM = gc.startingMap(gc.planet());
-		
-		
-		System.out.println("Player for " + PM.getPlanet());
+        // Connect to the manager, starting the game
+    	gc = new GameController();
+    	ourTeam = gc.team();
+    	PM = gc.startingMap(gc.planet());
+    	
+        gc.queueResearch(UnitType.Ranger);
+        gc.queueResearch(UnitType.Worker);
+        gc.queueResearch(UnitType.Rocket);         
+        gc.queueResearch(UnitType.Ranger);
+        gc.queueResearch(UnitType.Worker);
+        gc.queueResearch(UnitType.Worker);
+        gc.queueResearch(UnitType.Worker);
+        gc.queueResearch(UnitType.Rocket);
+        gc.queueResearch(UnitType.Rocket);
+        gc.queueResearch(UnitType.Ranger);
 
-		resourceDeposits = initalizeResources();
-		// We need to set our base location here
+    	System.out.println("Player for " + PM.getPlanet());
 
+    	resourceDeposits = initalizeResources();
+    	// We need to set our base location here
 
 		while (true) {				
 			//workerCount = gc.senseNearbyUnitsByType(new MapLocation(Planet.Earth, 0,0), 100, UnitType.Worker).size();
@@ -157,7 +166,7 @@ public class Player {
         return;
     }
 		
-		public static void activateWorker(Unit unit) {
+	public static void activateWorker(Unit unit) {
         Location location = unit.location();
 
         if (!location.isOnMap()) {
@@ -252,6 +261,7 @@ public class Player {
             if (target != null) {
                 updateHashMaps(unit, target);
                 mapFinder.get(unit).walkOnGrid(-1); 
+                moveUnit(unit, direction);
                 return;
             }
 
@@ -268,7 +278,8 @@ public class Player {
 
             if (target != null) {
                 updateHashMaps(unit, target);
-                mapFinder.get(unit).walkOnGrid(-1); 
+                Direction direction = mapFinder.get(unit).walkOnGrid(-1); 
+                moveUnit(unit, direction);
                 return;
             }
         }
@@ -276,7 +287,7 @@ public class Player {
     }
 
     public static void updateHashMaps(Unit unit, MapLocation location) {
-				Integer coordinates = location.getX() * 100 + location.getY();
+		Integer coordinates = location.getX() * 100 + location.getY();
         if (!mapHolder.containsKey(coordinates)) {
             mapHolder.put(coordinates, new MapSurface(PM, location));
         }
@@ -299,7 +310,6 @@ public class Player {
 
 
     // TODO:
-    
     public static ArrayList<MapLocation> initalizeResources() {
         return new ArrayList<MapLocation>();
 
@@ -307,6 +317,13 @@ public class Player {
 
     // TODO:
     public static void updateResources() {
+        return;
+    }
+
+    public static void moveUnit(Unit unit, Direction direction) {
+        if (gc.isMoveReady(unit.id()) && gc.canMove(unit.id(), direction)) {
+            gc.moveRobot(unit.id(), direction);
+        }
         return;
     }
 }
