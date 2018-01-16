@@ -55,6 +55,7 @@ public class Player {
 			
 		explorationMap = new MapHandler(null, null, gc);
 
+		crowdedMap = new MapHandler(null, null, gc);
 			while (true) {				
 				//workerCount = gc.senseNearbyUnitsByType(new MapLocation(Planet.Earth, 0,0), 100, UnitType.Worker).size();
 				System.out.println("Current round: "+gc.round() +" workerCount: "+ workerCount+" k: "+ gc.karbonite());
