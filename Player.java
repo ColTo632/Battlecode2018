@@ -27,11 +27,19 @@ public class Player {
 		private static List<MapLocation> resourceDeposits;
 
     private static GameController gc;	
+<<<<<<< Updated upstream
 		private static Team ourTeam;
 		
 		public static void main(String[] args) {
 			
 			System.out.println("Init Player");
+=======
+	private static Team ourTeam;
+	
+	public static MapHandler explorationMap;
+	
+	public static void main(String[] args) {
+>>>>>>> Stashed changes
 
         // Connect to the manager, starting the game
 			gc = new GameController();
@@ -48,16 +56,33 @@ public class Player {
 			workFactory = new MapSurface(PM, 19, 1);
 			currentresource = new MapSurface(PM, 1, 19);
 
+<<<<<<< Updated upstream
 			resourceDeposits = initalizeResources();
 			// We need to set our base location here
 
+=======
+    	resourceDeposits = initalizeResources();
+			
+		explorationMap = new MapHandler(null, null, gc);
+>>>>>>> Stashed changes
 
 			while (true) {
 				//workerCount = gc.senseNearbyUnitsByType(new MapLocation(Planet.Earth, 0,0), 100, UnitType.Worker).size();
+<<<<<<< Updated upstream
 				System.out.println("Current round: "+gc.round() +" workerCount: "+ workerCount);
 
 
 
+=======
+				System.out.println("Current round: "+gc.round() +" workerCount: "+ workerCount+" k: "+ gc.karbonite());
+				thisTurnsWorkerCount = 0;
+
+				if(gc.round() % 20 == 1)
+				{
+					explore();
+				}
+				
+>>>>>>> Stashed changes
 				VecUnit units = gc.myUnits();
 				for (int i = 0; i < units.size(); i++) {
 					Unit unit = units.get(i);
@@ -136,9 +161,37 @@ public class Player {
     }
 
     public static void activateRanger(Unit unit) {
+<<<<<<< Updated upstream
 			Location local = unit.location();
 			if(!local.isOnMap()){
 				return;
+=======
+		Location location = unit.location();
+		if(!location.isOnMap()){
+			return;
+		}
+		MapLocation unitLocation = location.mapLocation();
+        if (PM.onMap(unitLocation)){
+            VecUnit nearby = gc.senseNearbyUnits(unitLocation, 70);
+				for (int i = 0; i < nearby.size(); i++) {
+					Unit other = nearby.get(i);
+					if(other.team() != ourTeam && gc.isAttackReady(unit.id())){										
+
+						if (gc.canAttack(unit.id(), other.id())){
+
+							if(unit.location().isOnMap() && other.location().isOnMap()){
+
+								gc.attack(unit.id(), other.id());
+								break;
+							}
+						}
+					}
+				}
+				if (gc.senseNearbyUnitsByType(unit.location().mapLocation(), 60, UnitType.Ranger).size() > 0) {
+					moveUnit(unit, explorationMap.walkOnGrid(-1, unit));					
+				}
+				
+>>>>>>> Stashed changes
 			}
 			MapLocation unitLocation = unit.location().mapLocation();
             if (PM.onMap(unitLocation)){
@@ -163,6 +216,30 @@ public class Player {
     }
 
     public static void activateRocket(Unit unit) {
+        Location location = unit.location();
+        if (!location.isOnMap) {
+            return;
+        }
+        MapLocation unitLocation = location.MapLocation();
+
+        // If the rocket is full and no one is around it take off 
+        if ((gc.round() == 749) || ((unit.structureGarrison().size() == unit.structureMaxCapacity) && (gc.senseNearbyUnitsByTeam(unitLocation, 1, ourTeam).isEmpty())) {
+            MapLocation landingZone = findLandingZone();
+            if (gc.canLaunchRocket(unit.id(), landingZone)) {
+                gc.LaunchRocket(unit.id(), landingZone);
+            }
+        }
+
+        // If on mars and garrison has units unload them 
+        if ((unit.structureGarrison().size() != 0) && location.isOnPlanet(Planet.Mars)) {
+            for(Direction direction : Direction.values()) {
+                if (gc.canUnload(unit.id(), direction)){
+                    gc.unload(unit.id(), direction);
+                    activateUnit(gc.senseUnitAtLocation(unit.location().mapLocation().add(direction)));
+                }
+            }
+        }
+
         return;
     }
 		
@@ -191,7 +268,7 @@ public class Player {
             }
 
             // Build new Factory
-            else if ((gc.karbonite() > FACTORY_THRESHHOLD) && adjacentFactories.size() == 0 ){
+            else if ((gc.karbonite() > FACTORY_THRESHHOLD) && adjacentStructures.size() == 0){
                 for (Direction direction : Direction.values()) {
                     if (gc.canBlueprint(unit.id(), UnitType.Factory, direction)){
                         gc.blueprint(unit.id(), UnitType.Factory, direction);
@@ -200,7 +277,8 @@ public class Player {
                 }
             }
 
-            // Interact with adjacent factories
+            // todo
+            // Interact with adjacent factories OR ROCKETS
             else if (adjacentFactories.size() != 0) {
 
                 // Repair an adjacent factory
@@ -224,6 +302,17 @@ public class Player {
                 }
             }
 
+            // Build a rocket
+            // Build new Factory
+            else if ((gc.karbonite() > ROCKET_THRESHHOLD) && adjacentStructures.size() == 0){
+                for (Direction direction : Direction.values()) {
+                    if (gc.canBlueprint(unit.id(), UnitType.Rocket, direction)){
+                        gc.blueprint(unit.id(), UnitType.Rocket, direction);
+                        break;
+                    }
+                }
+            }
+
             // Harvest Karbonite
             for (Direction direction : Direction.values()) {
                 if (gc.canHarvest(unit.id(), direction)) {
@@ -231,8 +320,8 @@ public class Player {
                     break;
                 }
             }
-
-            // Find a factory to work on
+            //todo
+            // Find a factory to work on OR A ROCKET
             VecUnit nearbyFactories = gc.senseNearbyUnitsByType(unitLocation, 10, UnitType.Factory);
             for (int i = 0; i < nearbyFactories.size(); i++) {
 
@@ -270,6 +359,10 @@ public class Player {
         return false;
     }
 
+    // TODO:
+    public static Location findLandingZone() {
+
+    } 
 
     // TODO:
     
