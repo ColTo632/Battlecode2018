@@ -6,9 +6,6 @@ import java.util.*;
 public class Player {
 	
 	//Important global variables
-    private static MapLocation base; 
-    private static MapLocation enemyBase;
-
     private static long MAX_WORKER_COUNT = 15; 
     private static long workerCount = 0;
 	private static long thisTurnsWorkerCount = 0;
@@ -18,9 +15,10 @@ public class Player {
 
     private static HashMap<Integer, MapSurface> mapHolder = new HashMap<Integer, MapSurface>();
     private static HashMap<Unit, MapHandler> mapFinder = new HashMap<Unit, MapHandler>();
+    private static HashMap<MapLocation, Long> resourceDeposits;
 
 	private static PlanetMap PM;  
-	private static List<MapLocation> resourceDeposits;
+
 
     private static GameController gc;	
 	private static Team ourTeam;
@@ -35,24 +33,26 @@ public class Player {
     	gc = new GameController();
     	ourTeam = gc.team();
     	PM = gc.startingMap(gc.planet());
-    	
-        gc.queueResearch(UnitType.Ranger);
-        gc.queueResearch(UnitType.Worker);
-        gc.queueResearch(UnitType.Rocket);         
-        gc.queueResearch(UnitType.Ranger);
-        gc.queueResearch(UnitType.Worker);
-        gc.queueResearch(UnitType.Worker);
-        gc.queueResearch(UnitType.Worker);
-        gc.queueResearch(UnitType.Rocket);
-        gc.queueResearch(UnitType.Rocket);
-        gc.queueResearch(UnitType.Ranger);
+
+        // Queue up research if we are on earth
+    	if (PM.getPlanet() == Planet.Earth) {
+            gc.queueResearch(UnitType.Ranger);
+            gc.queueResearch(UnitType.Worker);
+            gc.queueResearch(UnitType.Rocket);         
+            gc.queueResearch(UnitType.Ranger);
+            gc.queueResearch(UnitType.Worker);
+            gc.queueResearch(UnitType.Worker);
+            gc.queueResearch(UnitType.Worker);
+            gc.queueResearch(UnitType.Rocket);
+            gc.queueResearch(UnitType.Rocket);
+            gc.queueResearch(UnitType.Ranger);
+        }
 
     	System.out.println("Player for " + PM.getPlanet());
 
     	resourceDeposits = initalizeResources();
 			
-			explorationMap = new MapHandler(null, null, gc);
-    	// We need to set our base location here
+		explorationMap = new MapHandler(null, null, gc);
 
 			while (true) {				
 				//workerCount = gc.senseNearbyUnitsByType(new MapLocation(Planet.Earth, 0,0), 100, UnitType.Worker).size();
@@ -74,8 +74,6 @@ public class Player {
 				VecUnit units = gc.myUnits();
 				for (int i = 0; i < units.size(); i++) {
 					Unit unit = units.get(i);
-
-					updateResources();
 
 					activateUnit(unit);
 				}
@@ -300,11 +298,23 @@ public class Player {
             // Find Karbonite to harvest 
             distance = 2500;
             target = null;
-            for (MapLocation resourceLocation : resourceDeposits) {
-                long travelDistance = unitLocation.distanceSquaredTo(resourceLocation);
-                if  (travelDistance < distance) {
-                    distance = travelDistance;
-                    target = resourceLocation;
+            Iterator it = resourceDeposits.keys().iterator();
+            while (it.hasNext()) {
+                MapLocation resourceLocation = it.next();
+
+                if (gc.canSenseLocation(resourceLocation)) {
+                    if(gc.karboniteAtLocation(resourceLocation) == 0) {
+                        resourceDeposits.remove(resourceLocation);
+                    }
+                }
+
+                if resourceDeposits.containsKey(resourceLocation) {
+                    long travelDistance = unitLocation.distanceSquaredTo(resourceDeposits.get(resourceLocation));
+
+                    if  (travelDistance < distance) {
+                        distance = travelDistance;
+                        target = resourceLocation;
+                    }
                 }
             }
 
@@ -342,15 +352,23 @@ public class Player {
 
 
     // TODO:
-    public static ArrayList<MapLocation> initalizeResources() {
-        return new ArrayList<MapLocation>();
+    public static HashMap<MapLocation, Long> initalizeResources() {
+        HashMap<MapLocation, Long> resourceDeposits = new HashMap<MapLocation, Long>();
+        VecMapLocation mapLocations = gc.allLocationsWithin(new MapLocation(Planet.Earth, 0,0), 2500);
 
+        for(int i = 0; i < mapLocations.size(); i++) {
+            MapLocation location = mapLocations.get(i);
+            long karboniteAtLocation = PM.getInitialKarbonite(location);
+
+            if (karboniteAtLocation > 0) {
+                resourceDeposits.put(location, karboniteAtLocation);
+            }
+
+        }
+
+        return resourceDeposits;
     }
 
-    // TODO:
-    public static void updateResources() {
-        return;
-    }
 
     public static void moveUnit(Unit unit, Direction direction) {
         if (gc.isMoveReady(unit.id()) && gc.canMove(unit.id(), direction)) {
