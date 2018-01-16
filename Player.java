@@ -217,7 +217,7 @@ public class Player {
         else {
 
             // Replicate
-            if ((workerCount < MAX_WORKER_COUNT) && (gc.karbonite() > 15)) {
+            if ((workerCount < MAX_WORKER_COUNT) && (gc.karbonite() > 15) && (PM.getPlanet != Planet.Mars)) {
                 for (Direction direction : Direction.values()) {
                     if (gc.canReplicate(unit.id(), direction)){
                         workerCount++;
