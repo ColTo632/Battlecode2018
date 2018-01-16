@@ -11,6 +11,7 @@ public class Player {
 	private static long thisTurnsWorkerCount = 0;
 
     private static short FACTORY_THRESHHOLD = 120;
+    private static short ROCKET_THRESHHOLD = 300;
     private static short RANGER_THRESHHOLD = 20;
 
     private static HashMap<Integer, MapSurface> mapHolder = new HashMap<Integer, MapSurface>();
@@ -218,16 +219,16 @@ public class Player {
 
     public static void activateRocket(Unit unit) {
         Location location = unit.location();
-        if (!location.isOnMap) {
+        if (!location.isOnMap()) {
             return;
         }
-        MapLocation unitLocation = location.MapLocation();
+        MapLocation unitLocation = location.mapLocation();
 
         // If the rocket is full and no one is around it take off 
-        if ((gc.round() == 749) || ((unit.structureGarrison().size() == unit.structureMaxCapacity) && (gc.senseNearbyUnitsByTeam(unitLocation, 1, ourTeam).isEmpty())) {
+        if ((gc.round() == 749) || ((unit.structureGarrison().size() == unit.structureMaxCapacity()) && (gc.senseNearbyUnitsByTeam(unitLocation, 1, ourTeam).size() == 0))) {
             MapLocation landingZone = findLandingZone();
             if (gc.canLaunchRocket(unit.id(), landingZone)) {
-                gc.LaunchRocket(unit.id(), landingZone);
+                gc.launchRocket(unit.id(), landingZone);
             }
         }
 
@@ -439,6 +440,9 @@ public class Player {
         return resourceDeposits;
     }
 
+    public static MapLocation findLandingZone() {
+        return null;
+    }
 
     public static void moveUnit(Unit unit, Direction direction) {
         if (gc.isMoveReady(unit.id()) && gc.canMove(unit.id(), direction)) {
