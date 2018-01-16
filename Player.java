@@ -328,7 +328,7 @@ public class Player {
 
                 if (gc.canSenseLocation(resourceLocation)) {
                     if(gc.karboniteAt(resourceLocation) == 0) {
-                        resourceDeposits.remove(resourceLocation);
+                        it.remove();
                     }
                 }
 
@@ -383,7 +383,7 @@ public class Player {
     // TODO:
     public static HashMap<MapLocation, Long> initalizeResources() {
         HashMap<MapLocation, Long> resourceDeposits = new HashMap<MapLocation, Long>();
-        VecMapLocation mapLocations = gc.allLocationsWithin(new MapLocation(Planet.Earth, 0,0), 2500);
+        VecMapLocation mapLocations = gc.allLocationsWithin(new MapLocation(PM.getPlanet(), 0,0), 2500);
 
         for(int i = 0; i < mapLocations.size(); i++) {
             MapLocation location = mapLocations.get(i);
