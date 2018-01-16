@@ -30,8 +30,25 @@ public class MapSurface {
 		short distance = 1;
 		propagateMap(lstML, distance, pmWorld);
 		//while there is a node in consideration
+	}
 	
+	
+	
+	public MapSurface(PlanetMap pmWorld, MapLocation ml) {
 		
+		System.out.println("Init MapSurface");
+		CenterX = ml.getX();
+		CenterY = ml.getY();
+		PUID = (x * 100) + y;
+		long pWidth = pmWorld.getWidth();
+		long pHeight = pmWorld.getHeight();
+		Planet p = pmWorld.getPlanet();
+		Surface = new short[(int)pWidth][(int)pHeight];
+		List<MapLocation> lstML = new ArrayList<MapLocation>();
+		lstML.add(ml);
+		short distance = 1;
+		propagateMap(lstML, distance, pmWorld);
+		//while there is a node in consideration
 	}
 	
 	private void propagateMap(List<MapLocation> lstML, short distance, PlanetMap pmWorld){

@@ -5,7 +5,7 @@ import java.util.*;
 
 public class MapHandler {
 	private Unit u;
-	private MapSurface ms;
+	public MapSurface ms;
 	private PlanetMap PM;
 	private GameController gc;
 	
@@ -18,7 +18,7 @@ public class MapHandler {
 		}
 		
 		
-		public Direction walkOnGrid(int direction)
+		public Direction walkOnGrid(int distance)
 		{
 			MapLocation unitLocation = u.location().mapLocation();			
 			for(Direction d: Direction.values()){
