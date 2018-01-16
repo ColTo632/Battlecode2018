@@ -24,6 +24,7 @@ public class Player {
 	private static Team ourTeam;
 	
 	public static MapHandler explorationMap;
+	public static MapHandler crowdedMap;
 	
 	public static void main(String[] args) {
 		
@@ -66,6 +67,7 @@ public class Player {
 				if(gc.round() % 20 == 1)
 				{
 					explore();
+					deCrowd();
 				}
 				
 				
@@ -94,6 +96,27 @@ public class Player {
 			}			
 			MapSurface explorationSurface = new MapSurface(PM, exploredPlaces);
 			explorationMap.ms = explorationSurface;
+		}
+		
+		public static void deCrowd()
+		{
+			VecUnit fact = gc.senseNearbyUnitsByType(new MapLocation(Planet.Earth, 0,0), 2500, UnitType.Factory);
+			VecUnit rock = gc.senseNearbyUnitsByType(new MapLocation(Planet.Earth, 0,0), 2500, UnitType.Rocket);
+			List<MapLocation> crowdedPlaces = new ArrayList<MapLocation>();
+			for (int i = 0; i < fact.size(); i++) {
+				Unit unit = fact.get(i);				
+				if(unit.team() == ourTeam){
+					crowdedPlaces.add(unit.location().mapLocation());
+				}
+			}
+			for (int i = 0; i < rock.size(); i++) {
+				Unit unit = rock.get(i);				
+				if(unit.team() == ourTeam){
+					crowdedPlaces.add(unit.location().mapLocation());
+				}
+			}				
+			MapSurface crowdedSurface = new MapSurface(PM, crowdedPlaces);
+			crowdedMap.ms = crowdedSurface;
 		}
 
     public static void activateUnit(Unit unit) {
@@ -217,7 +240,7 @@ public class Player {
         else {
 
             // Replicate
-            if ((workerCount < MAX_WORKER_COUNT) && (gc.karbonite() > 15) && (PM.getPlanet != Planet.Mars)) {
+            if ((workerCount < MAX_WORKER_COUNT) && (gc.karbonite() > 15) && (PM.getPlanet() != Planet.Mars)) {
                 for (Direction direction : Direction.values()) {
                     if (gc.canReplicate(unit.id(), direction)){
                         workerCount++;
@@ -298,18 +321,18 @@ public class Player {
             // Find Karbonite to harvest 
             distance = 2500;
             target = null;
-            Iterator it = resourceDeposits.keys().iterator();
+            Iterator it = resourceDeposits.keySet().iterator();
             while (it.hasNext()) {
-                MapLocation resourceLocation = it.next();
+                MapLocation resourceLocation = (MapLocation) it.next();
 
                 if (gc.canSenseLocation(resourceLocation)) {
-                    if(gc.karboniteAtLocation(resourceLocation) == 0) {
+                    if(gc.karboniteAt(resourceLocation) == 0) {
                         resourceDeposits.remove(resourceLocation);
                     }
                 }
 
-                if resourceDeposits.containsKey(resourceLocation) {
-                    long travelDistance = unitLocation.distanceSquaredTo(resourceDeposits.get(resourceLocation));
+                if (resourceDeposits.containsKey(resourceLocation)){
+                    long travelDistance = unitLocation.distanceSquaredTo(resourceLocation);
 
                     if  (travelDistance < distance) {
                         distance = travelDistance;
@@ -324,8 +347,13 @@ public class Player {
                 moveUnit(unit, direction);
                 return;
             }
+						//move away from factories and rockets
+						moveUnit(unit, crowdedMap.walkOnGrid(-1, unit));
+						
         }
-        return;
+        return;			
+				
+				
     }
 
     public static void updateHashMaps(Unit unit, MapLocation location) {
@@ -358,7 +386,7 @@ public class Player {
 
         for(int i = 0; i < mapLocations.size(); i++) {
             MapLocation location = mapLocations.get(i);
-            long karboniteAtLocation = PM.getInitialKarbonite(location);
+            long karboniteAtLocation = PM.initialKarboniteAt(location);
 
             if (karboniteAtLocation > 0) {
                 resourceDeposits.put(location, karboniteAtLocation);
