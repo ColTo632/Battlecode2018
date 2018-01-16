@@ -54,15 +54,39 @@ public class Player {
 			explorationMap = new MapHandler(null, null, gc);
     	// We need to set our base location here
 
-		while (true) {				
-			//workerCount = gc.senseNearbyUnitsByType(new MapLocation(Planet.Earth, 0,0), 100, UnitType.Worker).size();
-			System.out.println("Current round: "+gc.round() +" workerCount: "+ workerCount+" k: "+ gc.karbonite());
-			thisTurnsWorkerCount = 0;
+			while (true) {				
+				//workerCount = gc.senseNearbyUnitsByType(new MapLocation(Planet.Earth, 0,0), 100, UnitType.Worker).size();
+				System.out.println("Current round: "+gc.round() +" workerCount: "+ workerCount+" k: "+ gc.karbonite());
+				thisTurnsWorkerCount = 0;
 
+				
+				
+				
+				
+				if(gc.round() % 20 == 1)
+				{
+					explore();
+				}
+				
+				
+				
+				
+				VecUnit units = gc.myUnits();
+				for (int i = 0; i < units.size(); i++) {
+					Unit unit = units.get(i);
+
+					updateResources();
+
+					activateUnit(unit);
+				}
+				workerCount = thisTurnsWorkerCount;
+				// Submit the actions we've done, and wait for our next turn.
+				gc.nextTurn();
+			}
+    }
+		public static void explore()
+		{
 			VecUnit explorers = gc.senseNearbyUnitsByType(new MapLocation(Planet.Earth, 0,0), 2500, UnitType.Ranger);
-			
-			
-			//exshplorr
 			List<MapLocation> exploredPlaces = new ArrayList<MapLocation>();
 			for (int i = 0; i < explorers.size(); i++) {
 				Unit unit = explorers.get(i);				
@@ -72,22 +96,7 @@ public class Player {
 			}			
 			MapSurface explorationSurface = new MapSurface(PM, exploredPlaces);
 			explorationMap.ms = explorationSurface;
-			
-			
-			
-			VecUnit units = gc.myUnits();
-			for (int i = 0; i < units.size(); i++) {
-				Unit unit = units.get(i);
-
-				updateResources();
-
-				activateUnit(unit);
-			}
-			workerCount = thisTurnsWorkerCount;
-			// Submit the actions we've done, and wait for our next turn.
-			gc.nextTurn();
 		}
-    }    
 
     public static void activateUnit(Unit unit) {
         UnitType type = unit.unitType();
