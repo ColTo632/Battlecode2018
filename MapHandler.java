@@ -24,7 +24,7 @@ public class MapHandler {
 			for(Direction d: Direction.values()){
 				MapLocation newML = unitLocation.add(d);
 				//if the node exists and has no text and is pathable
-				if(PM.onMap(newML) && ms.Surface[newML.getX()][newML.getY()] == ms.Surface[unitLocation.getX()][unitLocation.getY()] + direction && PM.isPassableTerrainAt(newML) == 1 && gc.canMove(u.id(), d)){
+				if(PM.onMap(newML) && ms.Surface[newML.getX()][newML.getY()] == ms.Surface[unitLocation.getX()][unitLocation.getY()] + distance && PM.isPassableTerrainAt(newML) == 1 && gc.canMove(u.id(), d)){
 					//record it
 					return d;
 				}			

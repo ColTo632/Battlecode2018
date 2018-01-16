@@ -39,7 +39,7 @@ public class MapSurface {
 		System.out.println("Init MapSurface");
 		CenterX = ml.getX();
 		CenterY = ml.getY();
-		PUID = (x * 100) + y;
+		PUID = (CenterX * 100) + CenterY;
 		long pWidth = pmWorld.getWidth();
 		long pHeight = pmWorld.getHeight();
 		Planet p = pmWorld.getPlanet();
@@ -56,7 +56,6 @@ public class MapSurface {
 		System.out.println("Init MapSurface");
 		CenterX = -1;
 		CenterY = -1;
-		PUID = (x * 100) + y;
 		long pWidth = pmWorld.getWidth();
 		long pHeight = pmWorld.getHeight();
 		Planet p = pmWorld.getPlanet();

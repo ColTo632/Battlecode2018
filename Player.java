@@ -16,7 +16,7 @@ public class Player {
     private static short FACTORY_THRESHHOLD = 120;
     private static short RANGER_THRESHHOLD = 20;
 
-    private static HashMap<MapLocation, MapSurface> mapholder = new HashMap<MapLocation, MapSurface>();
+    private static HashMap<Integer, MapSurface> mapHolder = new HashMap<Integer, MapSurface>();
     private static HashMap<Unit, MapHandler> mapFinder = new HashMap<Unit, MapHandler>();
 
 	private static PlanetMap PM;  
@@ -239,12 +239,12 @@ public class Player {
                 Unit factory = nearbyFactories.get(i);
 
                 if (factory.health() < factory.maxHealth()) {
-                    MapLocation factoryLocation = factory.location().mapLocation());
+                    MapLocation factoryLocation = factory.location().mapLocation();
 
                     long travelDistance = unitLocation.distanceSquaredTo(factoryLocation);
                     if  (travelDistance < distance) {
                         distance = travelDistance;
-                        target = FactoryLocation;
+                        target = factoryLocation;
                     }
                 }
             }
@@ -258,11 +258,11 @@ public class Player {
             // Find Karbonite to harvest 
             distance = 2500;
             target = null;
-            for (MapLocation location : resourceDeposits) {
-                long travelDistance = unitLocation.distanceSquaredTo(location);
+            for (MapLocation resourceLocation : resourceDeposits) {
+                long travelDistance = unitLocation.distanceSquaredTo(resourceLocation);
                 if  (travelDistance < distance) {
                     distance = travelDistance;
-                    target = location;
+                    target = resourceLocation;
                 }
             }
 
@@ -276,17 +276,18 @@ public class Player {
     }
 
     public static void updateHashMaps(Unit unit, MapLocation location) {
-        if (!mapHolder.containsKey(location)) {
-            mapHolder.put(target, new MapSurface(PM, factoryLocation));
+				Integer coordinates = location.getX() * 100 + location.getY();
+        if (!mapHolder.containsKey(coordinates)) {
+            mapHolder.put(coordinates, new MapSurface(PM, location));
         }
-        MapSurface currentMapSurface = mapHolder.get(factoryLocation);
+        MapSurface currentMapSurface = mapHolder.get(coordinates);
 
         if (!mapFinder.containsKey(unit)) {
             mapFinder.put(unit, new MapHandler(unit, currentMapSurface, gc));
         } 
         else {
             MapHandler mh = mapFinder.get(unit);
-            mh.ms = currentMapSurface
+            mh.ms = currentMapSurface;
         }
     }
 
