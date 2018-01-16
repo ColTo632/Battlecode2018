@@ -11,66 +11,54 @@ public class Player {
 
     private static long MAX_WORKER_COUNT = 15; 
     private static long workerCount = 0;
-		private static long thisTurnsWorkerCount = 0;
+	private static long thisTurnsWorkerCount = 0;
 
     private static short FACTORY_THRESHHOLD = 120;
     private static short RANGER_THRESHHOLD = 20;
 
-		private static MapSurface topleftCorner1;
-		private static MapSurface topleftCorner2;
-		private static MapSurface topleftCorner3;
-		private static MapSurface topleftCorner4;
-		//wip
-		private static MapSurface workFactory;
-		//wip
-		private static MapSurface currentresource;
-		private static PlanetMap PM;  
-		private static List<MapLocation> resourceDeposits;
+    private static HashMap<MapLocation, MapSurface> mapholder = new HashMap<MapLocation, MapSurface>();
+    private static HashMap<Unit, MapHandler> mapFinder = new HashMap<Unit, MapHandler>();
+
+	private static PlanetMap PM;  
+	private static List<MapLocation> resourceDeposits;
 
     private static GameController gc;	
-		private static Team ourTeam;
+	private static Team ourTeam;
+	
+	public static void main(String[] args) {
 		
-		public static void main(String[] args) {
-			
-			System.out.println("Init Player");
+	System.out.println("Init Player");
 
-        // Connect to the manager, starting the game
-			gc = new GameController();
-			ourTeam = gc.team();
-			PM = gc.startingMap(gc.planet());
-			
-			
-			System.out.println("Player for " + PM.getPlanet());
-			
-			topleftCorner1 = new MapSurface(PM, 5, 5);
-			topleftCorner2 = new MapSurface(PM, 15, 5);
-			topleftCorner3 = new MapSurface(PM, 5, 15);
-			topleftCorner4 = new MapSurface(PM, 15, 15);
-			workFactory = new MapSurface(PM, 19, 1);
-			currentresource = new MapSurface(PM, 1, 19);
+    // Connect to the manager, starting the game
+		gc = new GameController();
+		ourTeam = gc.team();
+		PM = gc.startingMap(gc.planet());
+		
+		
+		System.out.println("Player for " + PM.getPlanet());
 
-			resourceDeposits = initalizeResources();
-			// We need to set our base location here
+		resourceDeposits = initalizeResources();
+		// We need to set our base location here
 
 
-			while (true) {				
-				//workerCount = gc.senseNearbyUnitsByType(new MapLocation(Planet.Earth, 0,0), 100, UnitType.Worker).size();
-				System.out.println("Current round: "+gc.round() +" workerCount: "+ workerCount+" k: "+ gc.karbonite());
-				thisTurnsWorkerCount = 0;
+		while (true) {				
+			//workerCount = gc.senseNearbyUnitsByType(new MapLocation(Planet.Earth, 0,0), 100, UnitType.Worker).size();
+			System.out.println("Current round: "+gc.round() +" workerCount: "+ workerCount+" k: "+ gc.karbonite());
+			thisTurnsWorkerCount = 0;
 
 
-				VecUnit units = gc.myUnits();
-				for (int i = 0; i < units.size(); i++) {
-					Unit unit = units.get(i);
+			VecUnit units = gc.myUnits();
+			for (int i = 0; i < units.size(); i++) {
+				Unit unit = units.get(i);
 
-					updateResources();
+				updateResources();
 
-					activateUnit(unit);
-				}
-				workerCount = thisTurnsWorkerCount;
-				// Submit the actions we've done, and wait for our next turn.
-				gc.nextTurn();
+				activateUnit(unit);
 			}
+			workerCount = thisTurnsWorkerCount;
+			// Submit the actions we've done, and wait for our next turn.
+			gc.nextTurn();
+		}
     }    
 
     public static void activateUnit(Unit unit) {
@@ -96,13 +84,13 @@ public class Player {
                 break;
             case Worker:
                 activateWorker(unit);
-								thisTurnsWorkerCount++;
+				thisTurnsWorkerCount++;
                 break;
         }
     }
 
     public static void activateFactory(Unit unit) {
-			System.out.println("activating factory");
+
         // If no workers exist build one.  
         if ((workerCount == 0) && (gc.canProduceRobot(unit.id(), UnitType.Worker))) {
             gc.produceRobot(unit.id(), UnitType.Worker);
@@ -110,7 +98,6 @@ public class Player {
 
         // If we have engough money build a ranger.
         else if ((gc.karbonite() >= RANGER_THRESHHOLD) && (gc.canProduceRobot(unit.id(), UnitType.Ranger))) {
-						System.out.println("making ranger");
             gc.produceRobot(unit.id(), UnitType.Ranger);
         }
 
@@ -140,29 +127,29 @@ public class Player {
     }
 
     public static void activateRanger(Unit unit) {
-			Location local = unit.location();
-			if(!local.isOnMap()){
-				return;
-			}
-			MapLocation unitLocation = unit.location().mapLocation();
-            if (PM.onMap(unitLocation)){
-                VecUnit nearby = gc.senseNearbyUnits(unitLocation, 70);
-								for (int i = 0; i < nearby.size(); i++) {
-									Unit other = nearby.get(i);
-									if(other.team() != ourTeam && gc.isAttackReady(unit.id())){										
-										//System.out.println("ranger done spotted a badguy");
-										if (gc.canAttack(unit.id(), other.id())){
-											//System.out.println("ranger can attack that guy");
-											if(unit.location().isOnMap() && other.location().isOnMap()){
-												//System.out.println("ranger gon beatemup");
-												gc.attack(unit.id(), other.id());
-												break;
-											}
-										}
-									}
-								}
-								//add stuff about how rangers move here
+		Location location = unit.location();
+		if(!location.isOnMap()){
+			return;
+		}
+		MapLocation unitLocation = location.mapLocation();
+        if (PM.onMap(unitLocation)){
+            VecUnit nearby = gc.senseNearbyUnits(unitLocation, 70);
+				for (int i = 0; i < nearby.size(); i++) {
+					Unit other = nearby.get(i);
+					if(other.team() != ourTeam && gc.isAttackReady(unit.id())){										
+						//System.out.println("ranger done spotted a badguy");
+						if (gc.canAttack(unit.id(), other.id())){
+							//System.out.println("ranger can attack that guy");
+							if(unit.location().isOnMap() && other.location().isOnMap()){
+								//System.out.println("ranger gon beatemup");
+								gc.attack(unit.id(), other.id());
+								break;
+							}
 						}
+					}
+				}
+				//add stuff about how rangers move here
+			}
         return;
     }
 
@@ -171,13 +158,21 @@ public class Player {
     }
 		
 		public static void activateWorker(Unit unit) {
-        MapLocation unitLocation = unit.location().mapLocation();
+        Location location = unit.location();
+
+        if (!location.isOnMap()) {
+            return;
+        }
+
+        MapLocation unitLocation = location.mapLocation();
         VecUnit adjacentFactories = gc.senseNearbyUnitsByType(unitLocation, 1, UnitType.Factory);
 
         // Retreat ( isVisible currently unimplemented)
         if (isVisible(unitLocation)) {
-            //activepaths depreciated
-						//activePaths.add(pf.findPath(unit, base));
+            //Find the closest enemy
+
+            //run away from them. 
+
         } 
 
         else {
@@ -238,21 +233,31 @@ public class Player {
 
             // Find a factory to work on
             VecUnit nearbyFactories = gc.senseNearbyUnitsByType(unitLocation, 10, UnitType.Factory);
+            long distance = 2500;
+            MapLocation target = null;
             for (int i = 0; i < nearbyFactories.size(); i++) {
-
                 Unit factory = nearbyFactories.get(i);
 
                 if (factory.health() < factory.maxHealth()) {
-									if (gc.isMoveReady(unit.id()) && gc.canMove(unit.id(), walkOnGrid(unit, workFactory, gc))) {
-										gc.moveRobot(unit.id(), walkOnGrid(unit, workFactory, gc));
-									}
-									return;
+                    MapLocation factoryLocation = factory.location().mapLocation());
+
+                    long travelDistance = unitLocation.distanceSquaredTo(factoryLocation);
+                    if  (travelDistance < distance) {
+                        distance = travelDistance;
+                        target = FactoryLocation;
+                    }
                 }
             }
 
+            if (target != null) {
+                updateHashMaps(unit, target);
+                mapFinder.get(unit).walkOnGrid(-1); 
+                return;
+            }
+
             // Find Karbonite to harvest 
-            long distance = 2500;
-            MapLocation target = null;
+            distance = 2500;
+            target = null;
             for (MapLocation location : resourceDeposits) {
                 long travelDistance = unitLocation.distanceSquaredTo(location);
                 if  (travelDistance < distance) {
@@ -260,14 +265,31 @@ public class Player {
                     target = location;
                 }
             }
-						if (gc.isMoveReady(unit.id()) && gc.canMove(unit.id(), walkOnGrid(unit, currentresource, gc))) {
-							gc.moveRobot(unit.id(), walkOnGrid(unit, currentresource, gc));
-						}
-						return;
-        }
 
+            if (target != null) {
+                updateHashMaps(unit, target);
+                mapFinder.get(unit).walkOnGrid(-1); 
+                return;
+            }
+        }
         return;
     }
+
+    public static void updateHashMaps(Unit unit, MapLocation location) {
+        if (!mapHolder.containsKey(location)) {
+            mapHolder.put(target, new MapSurface(PM, factoryLocation));
+        }
+        MapSurface currentMapSurface = mapHolder.get(factoryLocation);
+
+        if (!mapFinder.containsKey(unit)) {
+            mapFinder.put(unit, new MapHandler(unit, currentMapSurface, gc));
+        } 
+        else {
+            MapHandler mh = mapFinder.get(unit);
+            mh.ms = currentMapSurface
+        }
+    }
+
 
     // TODO:
     public static boolean isVisible(MapLocation loc) {
@@ -286,19 +308,4 @@ public class Player {
     public static void updateResources() {
         return;
     }
-		
-		public static Direction walkOnGrid(Unit u, MapSurface ms, GameController gc)
-		{
-			MapLocation unitLocation = u.location().mapLocation();			
-			for(Direction d: Direction.values()){
-				MapLocation newML = unitLocation.add(d);
-				//if the node exists and has no text and is pathable
-				if(PM.onMap(newML) && ms.Surface[newML.getX()][newML.getY()] == ms.Surface[unitLocation.getX()][unitLocation.getY()] - 1 && PM.isPassableTerrainAt(newML) == 1 && gc.canMove(u.id(), d)){
-					//record it
-					return d;
-				}			
-			}
-			
-			return Direction.Center;
-		}
 }
