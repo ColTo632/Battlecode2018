@@ -21,7 +21,6 @@ public class Player {
 
 
     private static GameController gc;	
-<<<<<<< HEAD
 	private static Team ourTeam;
 	
 	public static MapHandler explorationMap;
@@ -30,21 +29,6 @@ public class Player {
 	public static void main(String[] args) {
 		
     	System.out.println("Init Player");
-=======
-<<<<<<< Updated upstream
-		private static Team ourTeam;
-		
-		public static void main(String[] args) {
-			
-			System.out.println("Init Player");
-=======
-	private static Team ourTeam;
-	
-	public static MapHandler explorationMap;
-	
-	public static void main(String[] args) {
->>>>>>> Stashed changes
->>>>>>> NathanielTestBranch
 
         // Connect to the manager, starting the game
     	gc = new GameController();
@@ -65,28 +49,15 @@ public class Player {
             gc.queueResearch(UnitType.Ranger);
         }
 
-<<<<<<< HEAD
     	System.out.println("Player for " + PM.getPlanet());
 
     	resourceDeposits = initalizeResources();
 			
 		explorationMap = new MapHandler(null, null, gc);
-=======
-<<<<<<< Updated upstream
-			resourceDeposits = initalizeResources();
-			// We need to set our base location here
-
-=======
-    	resourceDeposits = initalizeResources();
-			
-		explorationMap = new MapHandler(null, null, gc);
->>>>>>> Stashed changes
->>>>>>> NathanielTestBranch
 
 		crowdedMap = new MapHandler(null, null, gc);
 			while (true) {				
 				//workerCount = gc.senseNearbyUnitsByType(new MapLocation(Planet.Earth, 0,0), 100, UnitType.Worker).size();
-<<<<<<< HEAD
 				System.out.println("Current round: "+gc.round() +" workerCount: "+ workerCount+" k: "+ gc.karbonite());
 				thisTurnsWorkerCount = 0;
 
@@ -103,23 +74,6 @@ public class Player {
 				
 				
 				
-=======
-<<<<<<< Updated upstream
-				System.out.println("Current round: "+gc.round() +" workerCount: "+ workerCount);
-
-
-
-=======
-				System.out.println("Current round: "+gc.round() +" workerCount: "+ workerCount+" k: "+ gc.karbonite());
-				thisTurnsWorkerCount = 0;
-
-				if(gc.round() % 20 == 1)
-				{
-					explore();
-				}
-				
->>>>>>> Stashed changes
->>>>>>> NathanielTestBranch
 				VecUnit units = gc.myUnits();
 				for (int i = 0; i < units.size(); i++) {
 					Unit unit = units.get(i);
@@ -232,14 +186,6 @@ public class Player {
     }
 
     public static void activateRanger(Unit unit) {
-<<<<<<< HEAD
-=======
-<<<<<<< Updated upstream
-			Location local = unit.location();
-			if(!local.isOnMap()){
-				return;
-=======
->>>>>>> NathanielTestBranch
 		Location location = unit.location();
 		if(!location.isOnMap()){
 			return;
@@ -250,7 +196,6 @@ public class Player {
 				for (int i = 0; i < nearby.size(); i++) {
 					Unit other = nearby.get(i);
 					if(other.team() != ourTeam && gc.isAttackReady(unit.id())){										
-<<<<<<< HEAD
 						//System.out.println("ranger done spotted a badguy");
 						if (gc.canAttack(unit.id(), other.id())){
 							//System.out.println("ranger can attack that guy");
@@ -259,43 +204,6 @@ public class Player {
 								gc.attack(unit.id(), other.id());
 								break;
 							}
-=======
-
-						if (gc.canAttack(unit.id(), other.id())){
-
-							if(unit.location().isOnMap() && other.location().isOnMap()){
-
-								gc.attack(unit.id(), other.id());
-								break;
-							}
-						}
-					}
-				}
-				if (gc.senseNearbyUnitsByType(unit.location().mapLocation(), 60, UnitType.Ranger).size() > 0) {
-					moveUnit(unit, explorationMap.walkOnGrid(-1, unit));					
-				}
-				
->>>>>>> Stashed changes
-			}
-			MapLocation unitLocation = unit.location().mapLocation();
-            if (PM.onMap(unitLocation)){
-                VecUnit nearby = gc.senseNearbyUnits(unitLocation, 70);
-								for (int i = 0; i < nearby.size(); i++) {
-									Unit other = nearby.get(i);
-									if(other.team() != ourTeam && gc.isAttackReady(unit.id())){										
-										System.out.println("ranger done spotted a badguy");
-										if (gc.canAttack(unit.id(), other.id())){
-											System.out.println("ranger can attack that guy");
-											if(unit.location().isOnMap() && other.location().isOnMap()){
-												System.out.println("ranger gon beatemup");
-												gc.attack(unit.id(), other.id());
-												break;
-											}
-										}
-									}
-								}
-								//add stuff about how rangers move here
->>>>>>> NathanielTestBranch
 						}
 					}
 				}
@@ -374,7 +282,7 @@ public class Player {
             }
 
             // Build new Factory
-            else if ((gc.karbonite() > FACTORY_THRESHHOLD) && adjacentStructures.size() == 0){
+            else if ((gc.karbonite() > FACTORY_THRESHHOLD) && adjacentFactories.size() == 0 ){
                 for (Direction direction : Direction.values()) {
                     if (gc.canBlueprint(unit.id(), UnitType.Factory, direction)){
                         gc.blueprint(unit.id(), UnitType.Factory, direction);
@@ -383,14 +291,8 @@ public class Player {
                 }
             }
 
-<<<<<<< HEAD
             // Interact with adjacent factories
             else if (adjacentStructures.size() != 0) {
-=======
-            // todo
-            // Interact with adjacent factories OR ROCKETS
-            else if (adjacentFactories.size() != 0) {
->>>>>>> NathanielTestBranch
 
                 // Repair an adjacent factory
                 for (int i = 0; i < adjacentStructures.size(); i++) {
@@ -414,7 +316,6 @@ public class Player {
             }
 
             // Build a rocket
-            // Build new Factory
             else if ((gc.karbonite() > ROCKET_THRESHHOLD) && adjacentStructures.size() == 0){
                 for (Direction direction : Direction.values()) {
                     if (gc.canBlueprint(unit.id(), UnitType.Rocket, direction)){
@@ -424,6 +325,7 @@ public class Player {
                 }
             }
 
+
             // Harvest Karbonite
             for (Direction direction : Direction.values()) {
                 if (gc.canHarvest(unit.id(), direction)) {
@@ -431,17 +333,11 @@ public class Player {
                     break;
                 }
             }
-<<<<<<< HEAD
 
             // Find a factory to work on
             VecUnit nearbyFactories = gc.senseNearbyUnitsByTeam(unitLocation, 10, ourTeam);
             long distance = 2500;
             MapLocation target = null;
-=======
-            //todo
-            // Find a factory to work on OR A ROCKET
-            VecUnit nearbyFactories = gc.senseNearbyUnitsByType(unitLocation, 10, UnitType.Factory);
->>>>>>> NathanielTestBranch
             for (int i = 0; i < nearbyFactories.size(); i++) {
                 Unit structure = nearbyFactories.get(i);
 
@@ -524,10 +420,6 @@ public class Player {
         return false;
     }
 
-    // TODO:
-    public static Location findLandingZone() {
-
-    } 
 
     // TODO:
     public static HashMap<MapLocation, Long> initalizeResources() {
