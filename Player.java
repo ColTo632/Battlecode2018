@@ -229,6 +229,11 @@ public class Player {
 
         MapLocation unitLocation = location.mapLocation();
         VecUnit adjacentFactories = gc.senseNearbyUnitsByType(unitLocation, 1, UnitType.Factory);
+        VecUnit adjacentRockets = gc.senseNearbyUnitsByType(unitLocation, 1, UnitType.Rocket);
+        ArrayList<Unit> adjacentStructures = new ArrayList<Unit>();
+        for (int i = 0; i < adjacentFactories.size(); i++) {
+            adjacentStructures.add(adjacentFactories.get(i));
+        }
 
         // Retreat ( isVisible currently unimplemented)
         if (isVisible(unitLocation)) {
@@ -263,24 +268,24 @@ public class Player {
             }
 
             // Interact with adjacent factories
-            else if (adjacentFactories.size() != 0) {
+            else if (adjacentStructures.size() != 0) {
 
                 // Repair an adjacent factory
-                for (int i = 0; i < adjacentFactories.size(); i++) {
-                    Unit factory = adjacentFactories.get(i);
+                for (int i = 0; i < adjacentStructures.size(); i++) {
+                    Unit structure = adjacentStructures.get(i);
 
-                    if (gc.canRepair(unit.id(), factory.id())) {
-                        gc.repair(unit.id(), factory.id());
+                    if (gc.canRepair(unit.id(), structure.id())) {
+                        gc.repair(unit.id(), structure.id());
                         break;
                     }
                 }
 
                 // Work on an adjacent factory
-                for (int i = 0; i < adjacentFactories.size(); i++) {
-                    Unit factory = adjacentFactories.get(i);
+                for (int i = 0; i < adjacentStructures.size(); i++) {
+                    Unit structure = adjacentStructures.get(i);
 
-                    if (gc.canBuild(unit.id(), factory.id())) {
-                        gc.build(unit.id(), factory.id());
+                    if (gc.canBuild(unit.id(), structure.id())) {
+                        gc.build(unit.id(), structure.id());
                         break;
                     }
                 }
@@ -295,14 +300,14 @@ public class Player {
             }
 
             // Find a factory to work on
-            VecUnit nearbyFactories = gc.senseNearbyUnitsByType(unitLocation, 10, UnitType.Factory);
+            VecUnit nearbyFactories = gc.senseNearbyUnitsByTeam(unitLocation, 10, ourTeam);
             long distance = 2500;
             MapLocation target = null;
             for (int i = 0; i < nearbyFactories.size(); i++) {
-                Unit factory = nearbyFactories.get(i);
+                Unit structure = nearbyFactories.get(i);
 
-                if (factory.health() < factory.maxHealth()) {
-                    MapLocation factoryLocation = factory.location().mapLocation();
+                if (gc.canBuild(unit.id(), structure.id()) || gc.canRepair(unit.id(), structure.id())) {
+                    MapLocation factoryLocation = structure.location().mapLocation();
 
                     long travelDistance = unitLocation.distanceSquaredTo(factoryLocation);
                     if  (travelDistance < distance) {
@@ -348,8 +353,9 @@ public class Player {
                 moveUnit(unit, direction);
                 return;
             }
-						//move away from factories and rockets
-						moveUnit(unit, crowdedMap.walkOnGrid(-1, unit));
+
+			//move away from factories and rockets
+			moveUnit(unit, crowdedMap.walkOnGrid(-1, unit));
 						
         }
         return;			
