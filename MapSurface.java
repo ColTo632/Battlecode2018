@@ -28,8 +28,13 @@ public class MapSurface {
 		List<MapLocation> lstML = new ArrayList<MapLocation>();
 		lstML.add(new MapLocation(p, x, y));
 		short distance = 1;
+		propagateMap(lstML, distance, pmWorld);
 		//while there is a node in consideration
 	
+		
+	}
+	
+	private void propagateMap(List<MapLocation> lstML, short distance, PlanetMap pmWorld){
 		while(!lstML.isEmpty()){
 			//ready a new lst for new nodes
 			List<MapLocation> lstNextML = new ArrayList<MapLocation>();

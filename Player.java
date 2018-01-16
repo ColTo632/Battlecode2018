@@ -55,7 +55,7 @@ public class Player {
 
 			while (true) {				
 				//workerCount = gc.senseNearbyUnitsByType(new MapLocation(Planet.Earth, 0,0), 100, UnitType.Worker).size();
-				System.out.println("Current round: "+gc.round() +" workerCount: "+ workerCount);
+				System.out.println("Current round: "+gc.round() +" workerCount: "+ workerCount+" k: "+ gc.karbonite());
 				thisTurnsWorkerCount = 0;
 
 
@@ -102,13 +102,15 @@ public class Player {
     }
 
     public static void activateFactory(Unit unit) {
+			System.out.println("activating factory");
         // If no workers exist build one.  
-        if ((workerCount < 2) && (gc.canProduceRobot(unit.id(), UnitType.Worker))) {
+        if ((workerCount == 0) && (gc.canProduceRobot(unit.id(), UnitType.Worker))) {
             gc.produceRobot(unit.id(), UnitType.Worker);
         }
 
         // If we have engough money build a ranger.
-        else if ((gc.karbonite() > RANGER_THRESHHOLD) && (gc.canProduceRobot(unit.id(), UnitType.Ranger))) {
+        else if ((gc.karbonite() >= RANGER_THRESHHOLD) && (gc.canProduceRobot(unit.id(), UnitType.Ranger))) {
+						System.out.println("making ranger");
             gc.produceRobot(unit.id(), UnitType.Ranger);
         }
 
@@ -148,11 +150,11 @@ public class Player {
 								for (int i = 0; i < nearby.size(); i++) {
 									Unit other = nearby.get(i);
 									if(other.team() != ourTeam && gc.isAttackReady(unit.id())){										
-										System.out.println("ranger done spotted a badguy");
+										//System.out.println("ranger done spotted a badguy");
 										if (gc.canAttack(unit.id(), other.id())){
-											System.out.println("ranger can attack that guy");
+											//System.out.println("ranger can attack that guy");
 											if(unit.location().isOnMap() && other.location().isOnMap()){
-												System.out.println("ranger gon beatemup");
+												//System.out.println("ranger gon beatemup");
 												gc.attack(unit.id(), other.id());
 												break;
 											}
