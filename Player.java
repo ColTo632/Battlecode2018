@@ -17,9 +17,11 @@ public class Player {
     private static HashMap<Integer, MapSurface> mapHolder = new HashMap<Integer, MapSurface>();
     private static HashMap<Unit, MapHandler> mapFinder = new HashMap<Unit, MapHandler>();
     private static HashMap<MapLocation, Long> resourceDeposits;
+    private static List<MapLocation> rocketList = new LinkedList<MapLocation>();
+    private static HashSet<MapLocation> landingZones = new HashSet<MapLocation>();
 
 	private static PlanetMap PM;  
-
+    private static AsteroidPattern strikePattern;
 
     private static GameController gc;	
 	private static Team ourTeam;
@@ -57,34 +59,51 @@ public class Player {
 		explorationMap = new MapHandler(null, null, gc);
 
 		crowdedMap = new MapHandler(null, null, gc);
-			while (true) {				
-				//workerCount = gc.senseNearbyUnitsByType(new MapLocation(Planet.Earth, 0,0), 100, UnitType.Worker).size();
-				System.out.println("Current round: "+gc.round() +" workerCount: "+ workerCount+" k: "+ gc.karbonite());
-				thisTurnsWorkerCount = 0;
 
-				
-				
-				
-				
-				if(gc.round() % 20 == 1)
-				{
-					explore();
-					deCrowd();
-				}
-				
-				
-				
-				
-				VecUnit units = gc.myUnits();
-				for (int i = 0; i < units.size(); i++) {
-					Unit unit = units.get(i);
+        if (PM.getPlanet() == Planet.Mars) {
+            strikePattern = gc.asteroidPattern();
+        }
 
-					activateUnit(unit);
-				}
-				workerCount = thisTurnsWorkerCount;
-				// Submit the actions we've done, and wait for our next turn.
-				gc.nextTurn();
+		while (true) {				
+			//workerCount = gc.senseNearbyUnitsByType(new MapLocation(Planet.Earth, 0,0), 100, UnitType.Worker).size();
+			System.out.println("Current round: "+gc.round() +" workerCount: "+ workerCount+" k: "+ gc.karbonite());
+			thisTurnsWorkerCount = 0;
+			long round = gc.round();
+			
+            if ((PM.getPlanet() == Planet.Mars) && strikePattern.hasAsteroid(round)) {
+                AsteroidStrike strike = strikePattern.asteroid(round);
+                resourceDeposits.put(strike.getLocation(), strike.getKarbonite());
+            }
+
+			if(round % 20 == 1) {
+				explore();
+				deCrowd();
 			}
+			
+			if((round > 200) && (round % 22 == 0)) {
+                RANGER_THRESHHOLD = 320;
+                FACTORY_THRESHHOLD = 420;
+            }
+			
+            if((round > 200) && (round % 11 == 0)) {
+                RANGER_THRESHHOLD = 20;
+                FACTORY_THRESHHOLD = 120;
+            }
+			
+
+
+
+
+			VecUnit units = gc.myUnits();
+			for (int i = 0; i < units.size(); i++) {
+				Unit unit = units.get(i);
+
+				activateUnit(unit);
+			}
+			workerCount = thisTurnsWorkerCount;
+			// Submit the actions we've done, and wait for our next turn.
+			gc.nextTurn();
+		}
     }
 		public static void explore()
 		{
@@ -192,28 +211,63 @@ public class Player {
 			return;
 		}
 		MapLocation unitLocation = location.mapLocation();
-        if (PM.onMap(unitLocation)){
-            VecUnit nearby = gc.senseNearbyUnits(unitLocation, 70);
-				for (int i = 0; i < nearby.size(); i++) {
-					Unit other = nearby.get(i);
-					if(other.team() != ourTeam && gc.isAttackReady(unit.id())){										
-						//System.out.println("ranger done spotted a badguy");
-						if (gc.canAttack(unit.id(), other.id())){
-							//System.out.println("ranger can attack that guy");
-							if(unit.location().isOnMap() && other.location().isOnMap()){
-								//System.out.println("ranger gon beatemup");
-								gc.attack(unit.id(), other.id());
-								break;
-							}
+        VecUnit adjacentRockets = gc.senseNearbyUnitsByType(unitLocation, 1, UnitType.Rocket);
+
+        VecUnit nearby = gc.senseNearbyUnits(unitLocation, 70);
+			for (int i = 0; i < nearby.size(); i++) {
+				Unit other = nearby.get(i);
+				if(other.team() != ourTeam && gc.isAttackReady(unit.id())){										
+					//System.out.println("ranger done spotted a badguy");
+					if (gc.canAttack(unit.id(), other.id())){
+						//System.out.println("ranger can attack that guy");
+						if(unit.location().isOnMap() && other.location().isOnMap()){
+							//System.out.println("ranger gon beatemup");
+							gc.attack(unit.id(), other.id());
+							break;
 						}
 					}
 				}
-				if(gc.senseNearbyUnitsByType(unit.location().mapLocation(), 60, UnitType.Ranger).size() > 0)
-				{
-					moveUnit(unit, explorationMap.walkOnGrid(-1, unit));					
-				}
-				
 			}
+
+        if (adjacentRockets.size() != 0) { 
+            for (int i = 0; i < adjacentRockets.size(); i++) {
+                Unit rocket = adjacentRockets.get(i);
+
+                if (gc.canLoad(rocket.id(), unit.id())) {
+                    gc.load(rocket.id(), unit.id());
+                    break;
+                }
+            }
+        }
+
+        if ((gc.round() > 700) && (unitLocation.getPlanet() != Planet.Mars)) { 
+            VecUnit nearbyRockets = gc.senseNearbyUnitsByType(unit.location().mapLocation(), 2500, UnitType.Rocket);
+            long distance = 2500;
+            MapLocation target = null;
+            for (int i = 0; i < nearbyRockets.size(); i++) {
+                Unit rocket = nearbyRockets.get(i);
+                if (gc.canLoad(rocket.id(), unit.id()) || gc.canRepair(rocket.id(), unit.id())) {
+                    MapLocation rocketLocation = rocket.location().mapLocation();
+
+                    long travelDistance = unitLocation.distanceSquaredTo(rocketLocation);
+                    if  (travelDistance < distance) {
+                        distance = travelDistance;
+                        target = rocketLocation;
+                    }
+                }
+            }
+
+            if (target != null) {
+                updateHashMaps(unit, target);
+                Direction dir = mapFinder.get(unit).walkOnGrid(-1); 
+                moveUnit(unit, dir);
+                return;
+            }
+        }
+		else if(gc.senseNearbyUnitsByType(unit.location().mapLocation(), 60, UnitType.Ranger).size() > 0) {
+			moveUnit(unit, explorationMap.walkOnGrid(-1, unit));					
+		}
+				
         return;
     }
 
@@ -224,11 +278,27 @@ public class Player {
         }
         MapLocation unitLocation = location.mapLocation();
 
-        // If the rocket is full and no one is around it take off 
-        if ((gc.round() == 749) || ((unit.structureGarrison().size() == unit.structureMaxCapacity()) && (gc.senseNearbyUnitsByTeam(unitLocation, 1, ourTeam).size() == 0))) {
+        if(!rocketList.contains(unitLocation)) {
+            rocketList.add(unitLocation);
+        }
+
+        // If Health is low take off
+        if (unit.health() <= 100) {
             MapLocation landingZone = findLandingZone();
-            if (gc.canLaunchRocket(unit.id(), landingZone)) {
+            if ((landingZone != null) && gc.canLaunchRocket(unit.id(), landingZone)) {
                 gc.launchRocket(unit.id(), landingZone);
+                rocketList.remove(unitLocation);
+                return;
+            }
+        }
+
+        // If the rocket is full and no one is around it take off 
+        else if ((gc.round() == 749) || ((unit.structureGarrison().size() == unit.structureMaxCapacity()) && (gc.senseNearbyUnitsByTeam(unitLocation, 1, ourTeam).size() == 0))) {
+            MapLocation landingZone = findLandingZone();
+            if ((landingZone != null) && gc.canLaunchRocket(unit.id(), landingZone)) {
+                gc.launchRocket(unit.id(), landingZone);
+                rocketList.remove(unitLocation);
+                return;
             }
         }
 
@@ -441,6 +511,30 @@ public class Player {
     }
 
     public static MapLocation findLandingZone() {
+        // Pick a spot on mars
+        MapLocation landingZone = new MapLocation(Planet.Mars, 0, 0);
+        PlanetMap mars = gc.startingMap(Planet.Mars);
+
+        for (int x = 0; x < mars.getWidth(); x++) {
+            for (int y = 0; y < mars.getHeight(); x++) {
+                if ((mars.isPassableTerrainAt(landingZone) == 0) && (!gc.canSenseLocation(landingZone) || gc.senseUnitAtLocation(landingZone) == null) && !landingZones.contains(landingZone)) {
+
+                    // Check that units can be unloaded from it
+                    boolean isLandingZone = true;
+                    for (Direction direction : Direction.values()) {
+                        MapLocation nearbySpace = landingZone.add(direction); 
+                        if (!((mars.isPassableTerrainAt(nearbySpace) == 0) && (!gc.canSenseLocation(landingZone) || gc.senseUnitAtLocation(landingZone) == null))) {
+                            isLandingZone = false;
+                        } 
+                    }
+
+                    if(isLandingZone) {
+                        landingZones.add(landingZone);
+                        return landingZone;
+                    }
+                }
+            }  
+        }  
         return null;
     }
 
