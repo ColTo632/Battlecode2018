@@ -6,11 +6,22 @@ import java.util.*;
 public class Player {
 	
 	//Important global variables
-    private static long MAX_WORKER_COUNT = 15; 
+    private static long MAX_WORKER_COUNT = 15;
+
+    private static long MAX_FACTORY_COUNT = 3;		
     private static long workerCount = 0;
 	private static long thisTurnsWorkerCount = 0;
 
-    private static short FACTORY_THRESHHOLD = 120;
+    private static short NORMAL_FACTORY_THRESHHOLD = 110;
+			
+    private static long factoryCount = 0;
+	private static long thisTurnsFactoryCount = 0;
+	
+	
+	private static boolean enemyVisible = false;
+	private static boolean currentlyPileDriving = false;
+		
+    private static short OVERLOAD_FACTORY_THRESHHOLD = 240;
     private static short ROCKET_THRESHHOLD = 300;
     private static short RANGER_THRESHHOLD = 20;
 
@@ -28,6 +39,7 @@ public class Player {
 	
 	public static MapHandler explorationMap;
 	public static MapHandler crowdedMap;
+	public static MapHandler piledriverMap;
 	
 	public static void main(String[] args) {
 		
@@ -59,15 +71,24 @@ public class Player {
 		explorationMap = new MapHandler(null, null, gc);
 
 		crowdedMap = new MapHandler(null, null, gc);
+		
+		
+		piledriverMap = new MapHandler(null, null, gc);
 
         if (PM.getPlanet() == Planet.Mars) {
             strikePattern = gc.asteroidPattern();
         }
 
-		while (true) {				
+		while (true) {	
+			
+			
+			
+						
+						
 			//workerCount = gc.senseNearbyUnitsByType(new MapLocation(Planet.Earth, 0,0), 100, UnitType.Worker).size();
 			System.out.println("Current round: "+gc.round() +" workerCount: "+ workerCount+" k: "+ gc.karbonite());
 			thisTurnsWorkerCount = 0;
+			thisTurnsFactoryCount = 0;
 			long round = gc.round();
 			
             if ((PM.getPlanet() == Planet.Mars) && strikePattern.hasAsteroid(round)) {
@@ -82,13 +103,28 @@ public class Player {
 			
 			if((round > 200) && (round % 22 == 0)) {
                 RANGER_THRESHHOLD = 320;
-                FACTORY_THRESHHOLD = 420;
+                NORMAL_FACTORY_THRESHHOLD = 420;
             }
 			
             if((round > 200) && (round % 11 == 0)) {
                 RANGER_THRESHHOLD = 20;
-                FACTORY_THRESHHOLD = 120;
+                NORMAL_FACTORY_THRESHHOLD = 110;
             }
+						
+						
+				if(gc.round() % 6 == 1)
+				{
+					if(enemyVisible && !currentlyPileDriving)
+					{
+						pileDrive();
+						currentlyPileDriving = true;
+					}
+					if(!enemyVisible)
+					{
+						currentlyPileDriving = false;
+					}					
+				}
+					enemyVisible = false;
 			
 
 
@@ -101,6 +137,8 @@ public class Player {
 				activateUnit(unit);
 			}
 			workerCount = thisTurnsWorkerCount;
+			
+			factoryCount = thisTurnsFactoryCount;
 			// Submit the actions we've done, and wait for our next turn.
 			gc.nextTurn();
 		}
@@ -139,12 +177,36 @@ public class Player {
 			MapSurface crowdedSurface = new MapSurface(PM, crowdedPlaces);
 			crowdedMap.ms = crowdedSurface;
 		}
+		
+		public static void pileDrive()
+		{
+			Team otherteam;
+			if(ourTeam == Team.Red)
+			{
+				otherteam = Team.Blue;
+			}
+			else
+			{
+				otherteam = Team.Red;
+			}
+			VecUnit enemies = gc.senseNearbyUnitsByTeam(new MapLocation(Planet.Earth, 0,0), 2500, otherteam);
+			List<MapLocation> enemyList = new ArrayList<MapLocation>();
+			for (int i = 0; i < enemies.size(); i++){
+				Unit unit = enemies.get(i);
+				enemyList.add(unit.location().mapLocation());
+				MapLocation target = unit.location().mapLocation();
+				MapSurface piledriverSurface = new MapSurface(PM, target);
+				piledriverMap.ms = piledriverSurface;
+				
+			}			
+		}
 
     public static void activateUnit(Unit unit) {
         UnitType type = unit.unitType();
         switch (type) { 
             case Factory: 
                 activateFactory(unit);
+								thisTurnsFactoryCount++;
                 break;
             case Healer:
                 activateHealer(unit);
@@ -353,7 +415,7 @@ public class Player {
             }
 
             // Build new Factory
-            else if ((gc.karbonite() > FACTORY_THRESHHOLD) && adjacentFactories.size() == 0 ){
+            else if (((gc.karbonite() > NORMAL_FACTORY_THRESHHOLD && factoryCount <= MAX_FACTORY_COUNT) || gc.karbonite() > OVERLOAD_FACTORY_THRESHHOLD) && adjacentFactories.size() == 0 ){
                 for (Direction direction : Direction.values()) {
                     if (gc.canBlueprint(unit.id(), UnitType.Factory, direction)){
                         gc.blueprint(unit.id(), UnitType.Factory, direction);
@@ -381,6 +443,8 @@ public class Player {
 
                     if (gc.canBuild(unit.id(), structure.id())) {
                         gc.build(unit.id(), structure.id());
+																				System.out.println("Fixing a factory");
+
                         break;
                     }
                 }
@@ -401,18 +465,19 @@ public class Player {
             for (Direction direction : Direction.values()) {
                 if (gc.canHarvest(unit.id(), direction)) {
                     gc.harvest(unit.id(), direction);
+
                     break;
                 }
             }
 
             // Find a factory to work on
-            VecUnit nearbyFactories = gc.senseNearbyUnitsByTeam(unitLocation, 10, ourTeam);
+            VecUnit nearbyFactories = gc.senseNearbyUnitsByType(unitLocation, 50, UnitType.Factory);
             long distance = 2500;
             MapLocation target = null;
             for (int i = 0; i < nearbyFactories.size(); i++) {
                 Unit structure = nearbyFactories.get(i);
 
-                if (gc.canBuild(unit.id(), structure.id()) || gc.canRepair(unit.id(), structure.id())) {
+                if (structure.team() == ourTeam && structure.structureIsBuilt() == 0) {
                     MapLocation factoryLocation = structure.location().mapLocation();
 
                     long travelDistance = unitLocation.distanceSquaredTo(factoryLocation);
@@ -427,6 +492,7 @@ public class Player {
                 updateHashMaps(unit, target);
                 Direction dir = mapFinder.get(unit).walkOnGrid(-1); 
                 moveUnit(unit, dir);
+								System.out.println("Finding a factory");
                 return;
             }
 
@@ -457,12 +523,15 @@ public class Player {
                 updateHashMaps(unit, target);
                 Direction direction = mapFinder.get(unit).walkOnGrid(-1); 
                 moveUnit(unit, direction);
+								System.out.println("Finding resources");
+
                 return;
             }
 
 			//move away from factories and rockets
 			moveUnit(unit, crowdedMap.walkOnGrid(-1, unit));
-						
+														System.out.println("decrowding");
+
         }
         return;			
 				
