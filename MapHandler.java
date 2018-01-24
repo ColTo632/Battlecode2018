@@ -20,38 +20,32 @@ public class MapHandler {
 		
 		public Direction walkOnGrid(int distance)
 		{
-			MapLocation unitLocation = u.location().mapLocation();			
-			for(Direction d: Direction.values()){
-				MapLocation newML = unitLocation.add(d);
-				//if the node exists and has no text and is pathable
-				if(PM.onMap(newML) && ms.Surface[newML.getX()][newML.getY()] == ms.Surface[unitLocation.getX()][unitLocation.getY()] + distance && PM.isPassableTerrainAt(newML) == 1 && gc.canMove(u.id(), d)){
-					//record it
-					return d;
-				}			
+			MapLocation unitLocation = u.location().mapLocation();
+			for(int i = distance; i != (distance * -1); i += (distance * -1)){	
+				for(Direction d: Direction.values()){
+					MapLocation newML = unitLocation.add(d);
+					//if the node exists and has no text and is pathable
+					if(PM.onMap(newML) && ms.Surface[newML.getX()][newML.getY()] == ms.Surface[unitLocation.getX()][unitLocation.getY()] + i && PM.isPassableTerrainAt(newML) == 1 && gc.canMove(u.id(), d)){
+						//record it
+						return d;
+					}
+				}
 			}
-			
 			return Direction.Center;
 		}
 		
 		public Direction walkOnGrid(int distance, Unit u)
 		{
-			MapLocation unitLocation = u.location().mapLocation();			
-			for(Direction d: Direction.values()){
-				MapLocation newML = unitLocation.add(d);
-				//if the node exists and has no text and is pathable
-				if(PM.onMap(newML) && ms.Surface[newML.getX()][newML.getY()] == ms.Surface[unitLocation.getX()][unitLocation.getY()] + distance && PM.isPassableTerrainAt(newML) == 1 && gc.canMove(u.id(), d)){
-					//record it
-					return d;
-				}			
-			}
-			
-			for(Direction d: Direction.values()){
-				MapLocation newML = unitLocation.add(d);
-				//if the node exists and has no text and is pathable
-				if(PM.onMap(newML) && ms.Surface[newML.getX()][newML.getY()] == ms.Surface[unitLocation.getX()][unitLocation.getY()] && PM.isPassableTerrainAt(newML) == 1 && gc.canMove(u.id(), d)){
-					//record it
-					return d;
-				}			
+			MapLocation unitLocation = u.location().mapLocation();
+			for(int i = distance; i != (distance * -1); i += (distance * -1)){
+				for(Direction d: Direction.values()){
+					MapLocation newML = unitLocation.add(d);
+					//if the node exists and has no text and is pathable
+					if(PM.onMap(newML) && ms.Surface[newML.getX()][newML.getY()] == ms.Surface[unitLocation.getX()][unitLocation.getY()] + i && PM.isPassableTerrainAt(newML) == 1 && gc.canMove(u.id(), d)){
+						//record it
+						return d;
+					}
+				}
 			}
 			
 			return Direction.Center;

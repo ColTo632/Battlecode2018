@@ -28,6 +28,7 @@ public class Player {
     private static HashMap<Integer, MapSurface> mapHolder = new HashMap<Integer, MapSurface>();
     private static HashMap<Unit, MapHandler> mapFinder = new HashMap<Unit, MapHandler>();
     private static HashMap<MapLocation, Long> resourceDeposits;
+		private static List<MapLocation> EnemyLocations;
     private static List<MapLocation> rocketList = new LinkedList<MapLocation>();
     private static HashSet<MapLocation> landingZones = new HashSet<MapLocation>();
 
@@ -67,6 +68,7 @@ public class Player {
     	System.out.println("Player for " + PM.getPlanet());
 
     	resourceDeposits = initalizeResources();
+			EnemyLocations = initalizeEnemyLocations();
 			
 		explorationMap = new MapHandler(null, null, gc);
 
@@ -112,19 +114,16 @@ public class Player {
             }
 						
 						
-				if(gc.round() % 6 == 1)
+				if(enemyVisible && !currentlyPileDriving)
 				{
-					if(enemyVisible && !currentlyPileDriving)
-					{
-						pileDrive();
-						currentlyPileDriving = true;
-					}
-					if(!enemyVisible)
-					{
-						currentlyPileDriving = false;
-					}					
+					pileDrive();
+					currentlyPileDriving = true;
 				}
-					enemyVisible = false;
+				if(!enemyVisible)
+				{
+					currentlyPileDriving = false;
+				}
+				enemyVisible = false;
 			
 
 
@@ -302,10 +301,10 @@ public class Player {
             }
         }
 
+            MapLocation target = null;
         if ((gc.round() > 700) && (unitLocation.getPlanet() != Planet.Mars)) { 
             VecUnit nearbyRockets = gc.senseNearbyUnitsByType(unit.location().mapLocation(), 2500, UnitType.Rocket);
             long distance = 2500;
-            MapLocation target = null;
             for (int i = 0; i < nearbyRockets.size(); i++) {
                 Unit rocket = nearbyRockets.get(i);
                 if (gc.canLoad(rocket.id(), unit.id()) || gc.canRepair(rocket.id(), unit.id())) {
@@ -326,6 +325,28 @@ public class Player {
                 return;
             }
         }
+				long distance = 2500;
+            target = null;
+            Iterator it = EnemyLocations.iterator();
+            while (it.hasNext()) {
+                MapLocation attackLocation = (MapLocation) it.next();
+
+								long travelDistance = unitLocation.distanceSquaredTo(attackLocation);
+
+                    if  (travelDistance < distance) {
+                        distance = travelDistance;
+                        target = attackLocation;
+                    }
+										
+            }
+
+            if (target != null) {
+                updateHashMaps(unit, target);
+                Direction direction = mapFinder.get(unit).walkOnGrid(-1); 
+                moveUnit(unit, direction);
+
+                return;
+            }
 		else if(gc.senseNearbyUnitsByType(unit.location().mapLocation(), 60, UnitType.Ranger).size() > 0) {
 			moveUnit(unit, explorationMap.walkOnGrid(-1, unit));					
 		}
@@ -523,7 +544,7 @@ public class Player {
                 updateHashMaps(unit, target);
                 Direction direction = mapFinder.get(unit).walkOnGrid(-1); 
                 moveUnit(unit, direction);
-								System.out.println("Finding resources");
+								//System.out.println("Finding resources");
 
                 return;
             }
@@ -577,6 +598,23 @@ public class Player {
         }
 
         return resourceDeposits;
+    }
+		
+		public static List<MapLocation> initalizeEnemyLocations() {
+        List<MapLocation> EnemyLocations = new ArrayList<MapLocation>();
+        VecUnit initialUnits = PM.getInitial_units();
+				
+				for (int i = 0; i < initialUnits.size(); i++) {
+					Unit unit = initialUnits.get(i);
+
+          
+					if(unit.team() != ourTeam)
+					{
+						MapLocation unitLocation = unit.location().mapLocation();
+						EnemyLocations.add(unitLocation);
+					}
+				}
+        return EnemyLocations;
     }
 
     public static MapLocation findLandingZone() {
