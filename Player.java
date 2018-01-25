@@ -699,11 +699,10 @@ public class Player {
                 if ((mars.isPassableTerrainAt(landingZone) == 0) && (!gc.canSenseLocation(landingZone) || gc.senseUnitAtLocation(landingZone) == null) && !landingZones.contains(landingZone)) {
 
                     // Check that units can be unloaded from it
-                    boolean isLandingZone = true;
+                    boolean isLandingZone = false;
                     for (Direction direction : Direction.values()) {
                         MapLocation nearbySpace = landingZone.add(direction); 
-                        if (!((mars.isPassableTerrainAt(nearbySpace) == 0) && (!gc.canSenseLocation(landingZone) || gc.senseUnitAtLocation(landingZone) == null))) {
-                            isLandingZone = false;
+                            isLandingZone = ((mars.isPassableTerrainAt(nearbySpace) == 0) && (!gc.canSenseLocation(landingZone) || gc.senseUnitAtLocation(landingZone) == null));
                         } 
                     }
 
