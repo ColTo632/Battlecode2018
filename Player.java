@@ -111,9 +111,16 @@ public class Player {
                 resourceDeposits.put(strike.getLocation(), strike.getKarbonite());
             }
 
-			if(round % 20 == 1) {
-				explore();
+			if(round % 20 == 1) {				
+				pileDrive();
 				deCrowd();
+				AssessBasesAndEnemyLocations();
+			}
+			
+			if(round % 80 == 1) {				
+				pileDrive();
+				explore();
+				currentlyPileDriving = !currentlyPileDriving;
 			}
 			
 			if((round > 200) && (round % 22 == 0)) {
@@ -126,7 +133,7 @@ public class Player {
                 NORMAL_FACTORY_THRESHHOLD = 110;
             }
 						
-						
+				/*		
 				if(enemyVisible && !currentlyPileDriving)
 				{
 					pileDrive();
@@ -137,7 +144,7 @@ public class Player {
 					currentlyPileDriving = false;
 				}
 				enemyVisible = false;
-			
+			*/
 
 
 
@@ -221,14 +228,16 @@ public class Player {
 			
 			Iterator enemyBases = EnemyLocations.iterator();
 			List<MapLocation> EnemyHolder = new ArrayList<MapLocation>();
-			while(bases.hasNext()){
+			while(enemyBases.hasNext()){
 				MapLocation e = (MapLocation) enemyBases.next();
-				if(gc.senseNearbyUnitsByTeam(e, 10, otherteam).size() == 0){
+				if(gc.senseNearbyUnitsByTeam(e, 10, otherteam).size() == 0 && gc.canSenseLocation(e)){
 					EnemyHolder.add(e);
 				}
 			}			
 			for(MapLocation ml: EnemyHolder){
+				
 				EnemyLocations.remove(ml);
+				System.out.println("removed Scary Place");
 			}
 			
 			
@@ -251,9 +260,10 @@ public class Player {
 				
 			}
 			if(scaryThing != null){
+				System.out.println("new Scary Place");
 					EnemyLocations.add(scaryThing);
 			}
-			
+			System.out.println("number of scary places is equal to " + EnemyLocations.size());
 			
 		}
 		
@@ -334,7 +344,8 @@ public class Player {
 
         VecUnit nearby = gc.senseNearbyUnits(unitLocation, 70);
 				int enemiesSpotted = 0;
-				int alliesSpotted = 0;
+				int alliesSpotted = 1;
+				if(gc.senseNearbyUnitsByTeam(unitLocation, 70, otherteam).size() != 0){
 			for (int i = 0; i < nearby.size(); i++) {
 				Unit other = nearby.get(i);
 				if(other.team() != ourTeam){
@@ -355,7 +366,7 @@ public class Player {
 					alliesSpotted++;
 				}
 			}
-
+				}
         if (adjacentRockets.size() != 0) { 
             for (int i = 0; i < adjacentRockets.size(); i++) {
                 Unit rocket = adjacentRockets.get(i);
@@ -396,6 +407,7 @@ public class Player {
 						Iterator it;
 						if(alliesSpotted > enemiesSpotted){
 							it = EnemyLocations.iterator();
+							//System.out.println("attacking Scary Place");
 						}
 						else {
 							it = BaseLocations.iterator();
@@ -412,7 +424,7 @@ public class Player {
 										
             }
 
-            if (target != null) {
+            if (target != null && currentlyPileDriving) {
                 updateHashMaps(unit, target);
                 Direction direction = mapFinder.get(unit).walkOnGrid(-1); 
                 moveUnit(unit, direction);
@@ -443,6 +455,7 @@ public class Player {
             if ((landingZone != null) && gc.canLaunchRocket(unit.id(), landingZone)) {
                 gc.launchRocket(unit.id(), landingZone);
                 rocketList.remove(unitLocation);
+								System.out.println("rocket left in panic");
                 return;
             }
         }
@@ -453,6 +466,7 @@ public class Player {
             if ((landingZone != null) && gc.canLaunchRocket(unit.id(), landingZone)) {
                 gc.launchRocket(unit.id(), landingZone);
                 rocketList.remove(unitLocation);
+								System.out.println("rocket left calmly");
                 return;
             }
         }
@@ -536,7 +550,7 @@ public class Player {
 
                     if (gc.canBuild(unit.id(), structure.id())) {
                         gc.build(unit.id(), structure.id());
-																				System.out.println("Fixing a factory");
+																				//System.out.println("Fixing a factory");
 
                         break;
                     }
@@ -585,7 +599,7 @@ public class Player {
                 updateHashMaps(unit, target);
                 Direction dir = mapFinder.get(unit).walkOnGrid(-1); 
                 moveUnit(unit, dir);
-								System.out.println("Finding a factory");
+								//System.out.println("Finding a factory");
                 return;
             }
 
@@ -684,35 +698,47 @@ public class Player {
 					{
 						MapLocation unitLocation = unit.location().mapLocation();
 						TeamLocations.add(unitLocation);
+						System.out.println("Added new init unit for team " + t);
 					}
 				}
         return TeamLocations;
     }
 
     public static MapLocation findLandingZone() {
+			System.out.println("Finding a landing zone");
         // Pick a spot on mars
-        MapLocation landingZone = new MapLocation(Planet.Mars, 0, 0);
+        
         PlanetMap mars = gc.startingMap(Planet.Mars);
 
         for (int x = 0; x < mars.getWidth(); x++) {
-            for (int y = 0; y < mars.getHeight(); x++) {
-                if ((mars.isPassableTerrainAt(landingZone) == 0) && (!gc.canSenseLocation(landingZone) || gc.senseUnitAtLocation(landingZone) == null) && !landingZones.contains(landingZone)) {
+            for (int y = 0; y < mars.getHeight(); y++) {
+								MapLocation landingZone = new MapLocation(Planet.Mars, x, y);
+                if ((mars.isPassableTerrainAt(landingZone) == 1) && (!gc.canSenseLocation(landingZone) || gc.senseUnitAtLocation(landingZone) == null) && !landingZones.contains(landingZone)) {
 
+								System.out.println("zone at " + x + " " + y + " looks ok");
                     // Check that units can be unloaded from it
                     boolean isLandingZone = false;
                     for (Direction direction : Direction.values()) {
-                        MapLocation nearbySpace = landingZone.add(direction); 
-                            isLandingZone = ((mars.isPassableTerrainAt(nearbySpace) == 0) && (!gc.canSenseLocation(landingZone) || gc.senseUnitAtLocation(landingZone) == null));
-                        } 
+                        MapLocation nearbySpace = landingZone.add(direction);
+												if(mars.onMap(nearbySpace)){
+													System.out.println("nearby zone is on map");
+																isLandingZone = ((mars.isPassableTerrainAt(nearbySpace) == 1) && (!gc.canSenseLocation(landingZone) || gc.senseUnitAtLocation(landingZone) == null));
+																if(isLandingZone){
+																	break;
+																}
+												}
                     }
 
                     if(isLandingZone) {
                         landingZones.add(landingZone);
                         return landingZone;
                     }
+										System.out.println("wasnt ok");
                 }
             }  
         }  
+				
+								System.out.println("no landing zones to be had");
         return null;
     }
 
