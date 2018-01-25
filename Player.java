@@ -30,7 +30,7 @@ public class Player {
 	private static boolean enemyVisible = false;
 	private static boolean currentlyPileDriving = false;
 		
-    private static short OVERLOAD_FACTORY_THRESHHOLD = 240;
+    private static short OVERLOAD_FACTORY_THRESHHOLD = 350;
     private static short ROCKET_THRESHHOLD = 300;
     private static short RANGER_THRESHHOLD = 20;
 
@@ -38,6 +38,8 @@ public class Player {
     private static HashMap<Unit, MapHandler> mapFinder = new HashMap<Unit, MapHandler>();
     private static HashMap<MapLocation, Long> resourceDeposits;
 	private static List<MapLocation> EnemyLocations;
+		private static List<MapLocation> EnemyLocations;
+		private static List<MapLocation> BaseLocations;
     private static List<MapLocation> rocketList = new LinkedList<MapLocation>();
     private static HashSet<MapLocation> landingZones = new HashSet<MapLocation>();
 
@@ -46,6 +48,7 @@ public class Player {
 
     private static GameController gc;	
 	private static Team ourTeam;
+	private static Team otherteam;
 	
 	public static MapHandler explorationMap;
 	public static MapHandler crowdedMap;
@@ -58,6 +61,15 @@ public class Player {
         // Connect to the manager, starting the game
     	gc = new GameController();
     	ourTeam = gc.team();
+			
+			if(ourTeam == Team.Red)
+			{
+				otherteam = Team.Blue;
+			}
+			else
+			{
+				otherteam = Team.Red;
+			}
     	PM = gc.startingMap(gc.planet());
 
         // Queue up research if we are on earth
@@ -77,7 +89,9 @@ public class Player {
     	System.out.println("Player for " + PM.getPlanet());
 
     	resourceDeposits = initalizeResources();
-			EnemyLocations = initalizeEnemyLocations();
+			EnemyLocations = initalizeTeamLocations(otherteam);
+			BaseLocations = initalizeTeamLocations(ourTeam);
+			
 			
 		explorationMap = new MapHandler(null, null, gc);
 
@@ -188,15 +202,7 @@ public class Player {
 		
 		public static void pileDrive()
 		{
-			Team otherteam;
-			if(ourTeam == Team.Red)
-			{
-				otherteam = Team.Blue;
-			}
-			else
-			{
-				otherteam = Team.Red;
-			}
+			
 			VecUnit enemies = gc.senseNearbyUnitsByTeam(new MapLocation(Planet.Earth, 0,0), 2500, otherteam);
 			List<MapLocation> enemyList = new ArrayList<MapLocation>();
 			for (int i = 0; i < enemies.size(); i++){
@@ -208,6 +214,59 @@ public class Player {
 				
 			}			
 		}
+		
+		public static void AssessBasesAndEnemyLocations()
+		{
+			Iterator bases = BaseLocations.iterator();
+			List<MapLocation> BaseHolder = new ArrayList<MapLocation>();
+			while(bases.hasNext()){
+				MapLocation b = (MapLocation) bases.next();
+				if(!gc.canSenseLocation(b)){
+					BaseHolder.add(b);
+				}
+			}			
+			for(MapLocation ml: BaseHolder){
+				BaseLocations.remove(ml);
+			}
+			
+			Iterator enemyBases = EnemyLocations.iterator();
+			List<MapLocation> EnemyHolder = new ArrayList<MapLocation>();
+			while(bases.hasNext()){
+				MapLocation e = (MapLocation) enemyBases.next();
+				if(gc.senseNearbyUnitsByTeam(e, 10, otherteam).size() == 0){
+					EnemyHolder.add(e);
+				}
+			}			
+			for(MapLocation ml: EnemyHolder){
+				EnemyLocations.remove(ml);
+			}
+			
+			
+			
+			VecUnit enemies = gc.senseNearbyUnitsByTeam(new MapLocation(Planet.Earth, 19,19), 2500, otherteam);
+			
+			long greatestThreat = 0;
+			MapLocation scaryThing = null;
+			for (int i = 0; i < enemies.size(); i++){
+				Unit unit = enemies.get(i);
+				MapLocation unitLocation = unit.location().mapLocation();
+				long threatLevel = 0;
+				threatLevel = gc.senseNearbyUnitsByTeam(unitLocation, 20, otherteam).size();
+				if(threatLevel > greatestThreat){
+					scaryThing = unitLocation;
+					greatestThreat = threatLevel;
+				}
+				
+				
+				
+			}
+			if(scaryThing != null){
+					EnemyLocations.add(scaryThing);
+			}
+			
+			
+		}
+		
 
     public static void activateUnit(Unit unit) {
         UnitType type = unit.unitType();
@@ -292,18 +351,26 @@ public class Player {
         VecUnit adjacentRockets = gc.senseNearbyUnitsByType(unitLocation, 1, UnitType.Rocket);
 
         VecUnit nearby = gc.senseNearbyUnits(unitLocation, 70);
+				int enemiesSpotted = 0;
+				int alliesSpotted = 0;
 			for (int i = 0; i < nearby.size(); i++) {
 				Unit other = nearby.get(i);
-				if(other.team() != ourTeam && gc.isAttackReady(unit.id())){										
-					//System.out.println("ranger done spotted a badguy");
-					if (gc.canAttack(unit.id(), other.id())){
-						//System.out.println("ranger can attack that guy");
-						if(unit.location().isOnMap() && other.location().isOnMap()){
-							//System.out.println("ranger gon beatemup");
-							gc.attack(unit.id(), other.id());
-							break;
+				if(other.team() != ourTeam){
+					enemiesSpotted++;
+					if(gc.isAttackReady(unit.id())){
+						//System.out.println("ranger done spotted a badguy");
+						if (gc.canAttack(unit.id(), other.id())){
+							//System.out.println("ranger can attack that guy");
+							if(unit.location().isOnMap() && other.location().isOnMap()){
+								//System.out.println("ranger gon beatemup");
+								gc.attack(unit.id(), other.id());
+							}
 						}
 					}
+				}
+				else
+				{
+					alliesSpotted++;
 				}
 			}
 
@@ -344,7 +411,13 @@ public class Player {
         }
 				long distance = 2500;
             target = null;
-            Iterator it = EnemyLocations.iterator();
+						Iterator it;
+						if(alliesSpotted > enemiesSpotted){
+							it = EnemyLocations.iterator();
+						}
+						else {
+							it = BaseLocations.iterator();
+						}
             while (it.hasNext()) {
                 MapLocation attackLocation = (MapLocation) it.next();
 
@@ -617,21 +690,21 @@ public class Player {
         return resourceDeposits;
     }
 		
-		public static List<MapLocation> initalizeEnemyLocations() {
-        List<MapLocation> EnemyLocations = new ArrayList<MapLocation>();
+		public static List<MapLocation> initalizeTeamLocations(Team t) {
+        List<MapLocation> TeamLocations = new ArrayList<MapLocation>();
         VecUnit initialUnits = PM.getInitial_units();
 				
 				for (int i = 0; i < initialUnits.size(); i++) {
 					Unit unit = initialUnits.get(i);
 
           
-					if(unit.team() != ourTeam)
+					if(unit.team() == t)
 					{
 						MapLocation unitLocation = unit.location().mapLocation();
-						EnemyLocations.add(unitLocation);
+						TeamLocations.add(unitLocation);
 					}
 				}
-        return EnemyLocations;
+        return TeamLocations;
     }
 
     public static MapLocation findLandingZone() {
