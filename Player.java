@@ -8,6 +8,16 @@ public class Player {
 	//Important global variables
     private static long MAX_WORKER_COUNT = 15;
 
+    private List<Unit> knightList = new ArrayList<>();
+    private List<Unit> mageList = new ArrayList<>();
+    private List<Unit> rangerList = new ArrayList<>();
+
+    private List<Unit> workerList = new ArrayList<>();
+    private List<Unit> healerList = new ArrayList<>();
+
+    private List<Unit> factoryList = new ArrayList<>();
+    private List<Unit> rocketList = new ArrayList<>();
+
     private static long MAX_FACTORY_COUNT = 3;		
     private static long workerCount = 0;
 	private static long thisTurnsWorkerCount = 0;
@@ -16,7 +26,6 @@ public class Player {
 			
     private static long factoryCount = 0;
 	private static long thisTurnsFactoryCount = 0;
-	
 	
 	private static boolean enemyVisible = false;
 	private static boolean currentlyPileDriving = false;
@@ -28,7 +37,7 @@ public class Player {
     private static HashMap<Integer, MapSurface> mapHolder = new HashMap<Integer, MapSurface>();
     private static HashMap<Unit, MapHandler> mapFinder = new HashMap<Unit, MapHandler>();
     private static HashMap<MapLocation, Long> resourceDeposits;
-		private static List<MapLocation> EnemyLocations;
+	private static List<MapLocation> EnemyLocations;
     private static List<MapLocation> rocketList = new LinkedList<MapLocation>();
     private static HashSet<MapLocation> landingZones = new HashSet<MapLocation>();
 
@@ -205,7 +214,7 @@ public class Player {
         switch (type) { 
             case Factory: 
                 activateFactory(unit);
-								thisTurnsFactoryCount++;
+				thisTurnsFactoryCount++;
                 break;
             case Healer:
                 activateHealer(unit);
@@ -259,6 +268,14 @@ public class Player {
     }
 
     public static void activateKnight(Unit unit) {
+
+        //Sense surroundings 
+        //    ask am i in danger? can i kill an enemy if i charge?
+
+
+
+
+
         return;
     }
 
