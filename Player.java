@@ -37,8 +37,15 @@ public class Player {
     private static HashMap<Integer, MapSurface> mapHolder = new HashMap<Integer, MapSurface>();
     private static HashMap<Unit, MapHandler> mapFinder = new HashMap<Unit, MapHandler>();
     private static HashMap<MapLocation, Long> resourceDeposits;
+<<<<<<< HEAD
 		private static List<MapLocation> EnemyLocations;
 		private static List<MapLocation> BaseLocations;
+=======
+	private static List<MapLocation> EnemyLocations;
+	private static List<MapLocation> EnemyLocations;
+	private static List<MapLocation> BaseLocations;
+    private static List<MapLocation> rocketList = new LinkedList<MapLocation>();
+>>>>>>> 972673d11cd6739fdd23a6490a2b653ba4ae3047
     private static HashSet<MapLocation> landingZones = new HashSet<MapLocation>();
 
 	private static PlanetMap PM;  
@@ -102,6 +109,13 @@ public class Player {
             strikePattern = gc.asteroidPattern();
         }
 
+        VecUnit units = gc.myUnits();
+            for (int i = 0; i < units.size(); i++) {
+                Unit unit = units.get(i);
+
+                activateUnit(unit);
+            }
+
 		while (true) {	
 			
 			
@@ -154,17 +168,92 @@ public class Player {
 				enemyVisible = false;
 			*/
 
+			for (int i = 0; i < knightList.size(); i++) {
+                Unit unit = knightList.get(i);
+                if (!gc.canSenseUnit(unit.id)) {
+                    knightList.remove(i);
+                    i--;
+                }
 
-
-
-			VecUnit units = gc.myUnits();
-			for (int i = 0; i < units.size(); i++) {
-				Unit unit = units.get(i);
-
-				activateUnit(unit);
+                else {
+				    activateUnit(unit);
+                }
 			}
-			workerCount = thisTurnsWorkerCount;
-			
+
+            for (int i = 0; i < mageList.size(); i++) {
+                Unit unit = mageList.get(i);
+                if (!gc.canSenseUnit(unit.id)) {
+                    mageList.remove(i);
+                    i--;
+                }
+                
+                else {
+                    activateUnit(unit);
+                }
+            }
+
+            for (int i = 0; i < rangerList.size(); i++) {
+                Unit unit = rangerList.get(i);
+                if (!gc.canSenseUnit(unit.id)) {
+                    rangerList.remove(i);
+                    i--;
+                }
+                
+                else {
+                    activateUnit(unit);
+                }
+            }    
+                    
+            for (int i = 0; i < workerList.size(); i++) {
+                Unit unit = workerList.get(i);
+                if (!gc.canSenseUnit(unit.id)) {
+                    workerList.remove(i);
+                    i--;
+                }
+                
+                else {
+                    activateUnit(unit);
+                }
+            }
+
+            for (int i = 0; i < healerList.size(); i++) {
+                Unit unit = healerList.get(i);
+                if (!gc.canSenseUnit(unit.id)) {
+                    healerList.remove(i);
+                    i--;
+                }
+                
+                else {
+                    activateUnit(unit);
+                }
+            }
+
+
+            for (int i = 0; i < factoryList.size(); i++) {
+                Unit unit = factoryList.get(i);
+                if (!gc.canSenseUnit(unit.id)) {
+                    factoryList.remove(i);
+                    i--;
+                }
+                
+                else {
+                    activateUnit(unit);
+                }
+            }	
+
+            for (int i = 0; i < rocketList.size(); i++) {
+                Unit unit = rocketList.get(i);
+                if (!gc.canSenseUnit(unit.id)) {
+                    rocketList.remove(i);
+                    i--;
+                }
+                
+                else {
+                    activateUnit(unit);
+                }
+            }      
+
+            workerCount = thisTurnsWorkerCount;      		
 			factoryCount = thisTurnsFactoryCount;
 			// Submit the actions we've done, and wait for our next turn.
 			gc.nextTurn();
