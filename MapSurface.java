@@ -17,7 +17,7 @@ public class MapSurface {
 
 	public MapSurface(PlanetMap pmWorld, int x, int y) {
 		
-		System.out.println("Init MapSurface");
+		//System.out.println("Init MapSurface");
 		CenterX = x;
 		CenterY = y;
 		PUID = (x * 100) + y;
@@ -36,7 +36,7 @@ public class MapSurface {
 	
 	public MapSurface(PlanetMap pmWorld, MapLocation ml) {
 		
-		System.out.println("Init MapSurface");
+		//System.out.println("Init MapSurface");
 		CenterX = ml.getX();
 		CenterY = ml.getY();
 		PUID = (CenterX * 100) + CenterY;
@@ -53,7 +53,7 @@ public class MapSurface {
 	
 	public MapSurface(PlanetMap pmWorld, List<MapLocation> lstML) {
 		
-		System.out.println("Init MapSurface");
+		//System.out.println("Init MapSurface");
 		CenterX = -1;
 		CenterY = -1;
 		long pWidth = pmWorld.getWidth();

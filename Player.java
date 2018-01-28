@@ -18,17 +18,22 @@ public class Player {
     private static List<Unit> factoryList = new ArrayList<>();
     private static List<Unit> rocketList = new ArrayList<>();
 
-    private static long MAX_FACTORY_COUNT = 3;		
+    private static long MAX_FACTORY_COUNT = 2;
     private static long workerCount = 0;
 	private static long thisTurnsWorkerCount = 0;
+	
+    private static long rangerCount = 0;
+	private static long thisTurnsRangerCount = 0;
 
-    private static short NORMAL_FACTORY_THRESHHOLD = 110;
+    private static short NORMAL_FACTORY_THRESHHOLD = 100;
 			
     private static long factoryCount = 0;
 	private static long thisTurnsFactoryCount = 0;
 	
 	private static boolean enemyVisible = false;
 	private static boolean currentlyPileDriving = false;
+	
+	private static short attackCooldown = 0;
 		
     private static short OVERLOAD_FACTORY_THRESHHOLD = 350;
     private static short ROCKET_THRESHHOLD = 300;
@@ -37,15 +42,11 @@ public class Player {
     private static HashMap<Integer, MapSurface> mapHolder = new HashMap<Integer, MapSurface>();
     private static HashMap<Unit, MapHandler> mapFinder = new HashMap<Unit, MapHandler>();
     private static HashMap<MapLocation, Long> resourceDeposits;
-<<<<<<< HEAD
+
 		private static List<MapLocation> EnemyLocations;
 		private static List<MapLocation> BaseLocations;
-=======
-	private static List<MapLocation> EnemyLocations;
-	private static List<MapLocation> EnemyLocations;
-	private static List<MapLocation> BaseLocations;
-    private static List<MapLocation> rocketList = new LinkedList<MapLocation>();
->>>>>>> 972673d11cd6739fdd23a6490a2b653ba4ae3047
+
+
     private static HashSet<MapLocation> landingZones = new HashSet<MapLocation>();
 
 	private static PlanetMap PM;  
@@ -94,6 +95,7 @@ public class Player {
     	System.out.println("Player for " + PM.getPlanet());
 
     	resourceDeposits = initalizeResources();
+			MAX_WORKER_COUNT = Math.min((resourceDeposits.size()/5) + 2, 15);
 			EnemyLocations = initalizeTeamLocations(otherteam);
 			BaseLocations = initalizeTeamLocations(ourTeam);
 			
@@ -109,12 +111,7 @@ public class Player {
             strikePattern = gc.asteroidPattern();
         }
 
-        VecUnit units = gc.myUnits();
-            for (int i = 0; i < units.size(); i++) {
-                Unit unit = units.get(i);
-
-                activateUnit(unit);
-            }
+        
 
 		while (true) {	
 			
@@ -123,8 +120,14 @@ public class Player {
 						
 						
 			//workerCount = gc.senseNearbyUnitsByType(new MapLocation(Planet.Earth, 0,0), 100, UnitType.Worker).size();
-			System.out.println("Current round: "+gc.round() +" workerCount: "+ workerCount+" k: "+ gc.karbonite());
+			System.out.println("Current round: "+gc.round() +" workers: "+ workerCount+" k: "+ gc.karbonite() +" r: "+ rangerCount);
+			//fixing api memory leak
+			System.gc();
+			if(gc.getTimeLeftMs() < 1000){
+				gc.nextTurn();
+			}
 			thisTurnsWorkerCount = 0;
+			thisTurnsRangerCount = 0;
 			thisTurnsFactoryCount = 0;
 			long round = gc.round();
 			
@@ -133,26 +136,40 @@ public class Player {
                 resourceDeposits.put(strike.getLocation(), strike.getKarbonite());
             }
 
-			if(round % 20 == 1) {				
-				pileDrive();
+			if(round % 20 == 1) {
 				deCrowd();
+			}
+			
+			if(round % 3 == 1) {
 				AssessBasesAndEnemyLocations();
 			}
 			
 			if(round % 80 == 1) {				
-				pileDrive();
+				//pileDrive();
 				explore();
-				currentlyPileDriving = !currentlyPileDriving;
 			}
 			
-			if((round > 200) && (round % 22 == 0)) {
-                RANGER_THRESHHOLD = 320;
-                NORMAL_FACTORY_THRESHHOLD = 420;
-            }
+			if(round % 4 == 1){
+				if(rangerCount > 10){
+					if(attackCooldown == 0){
+						currentlyPileDriving = true;
+					} else {
+						attackCooldown--;
+					}
+				} else{
+					attackCooldown = 10;
+						currentlyPileDriving = false;
+				}
+				
+			}
 			
-            if((round > 200) && (round % 11 == 0)) {
-                RANGER_THRESHHOLD = 20;
-                NORMAL_FACTORY_THRESHHOLD = 110;
+			
+			
+			VecUnit units = gc.myUnits();
+            for (int i = 0; i < units.size(); i++) {
+                Unit unit = units.get(i);
+
+                activateUnit(unit);
             }
 						
 				/*		
@@ -167,10 +184,10 @@ public class Player {
 				}
 				enemyVisible = false;
 			*/
-
+/*
 			for (int i = 0; i < knightList.size(); i++) {
                 Unit unit = knightList.get(i);
-                if (!gc.canSenseUnit(unit.id)) {
+                if (!gc.canSenseUnit(unit.id())) {
                     knightList.remove(i);
                     i--;
                 }
@@ -182,7 +199,7 @@ public class Player {
 
             for (int i = 0; i < mageList.size(); i++) {
                 Unit unit = mageList.get(i);
-                if (!gc.canSenseUnit(unit.id)) {
+                if (!gc.canSenseUnit(unit.id())) {
                     mageList.remove(i);
                     i--;
                 }
@@ -194,7 +211,7 @@ public class Player {
 
             for (int i = 0; i < rangerList.size(); i++) {
                 Unit unit = rangerList.get(i);
-                if (!gc.canSenseUnit(unit.id)) {
+                if (!gc.canSenseUnit(unit.id())) {
                     rangerList.remove(i);
                     i--;
                 }
@@ -206,7 +223,7 @@ public class Player {
                     
             for (int i = 0; i < workerList.size(); i++) {
                 Unit unit = workerList.get(i);
-                if (!gc.canSenseUnit(unit.id)) {
+                if (!gc.canSenseUnit(unit.id())) {
                     workerList.remove(i);
                     i--;
                 }
@@ -218,7 +235,7 @@ public class Player {
 
             for (int i = 0; i < healerList.size(); i++) {
                 Unit unit = healerList.get(i);
-                if (!gc.canSenseUnit(unit.id)) {
+                if (!gc.canSenseUnit(unit.id())) {
                     healerList.remove(i);
                     i--;
                 }
@@ -231,7 +248,7 @@ public class Player {
 
             for (int i = 0; i < factoryList.size(); i++) {
                 Unit unit = factoryList.get(i);
-                if (!gc.canSenseUnit(unit.id)) {
+                if (!gc.canSenseUnit(unit.id())) {
                     factoryList.remove(i);
                     i--;
                 }
@@ -243,7 +260,7 @@ public class Player {
 
             for (int i = 0; i < rocketList.size(); i++) {
                 Unit unit = rocketList.get(i);
-                if (!gc.canSenseUnit(unit.id)) {
+                if (!gc.canSenseUnit(unit.id())) {
                     rocketList.remove(i);
                     i--;
                 }
@@ -252,8 +269,9 @@ public class Player {
                     activateUnit(unit);
                 }
             }      
-
-            workerCount = thisTurnsWorkerCount;      		
+*/
+            workerCount = thisTurnsWorkerCount;
+			rangerCount = thisTurnsRangerCount; 						
 			factoryCount = thisTurnsFactoryCount;
 			// Submit the actions we've done, and wait for our next turn.
 			gc.nextTurn();
@@ -334,7 +352,7 @@ public class Player {
 			for(MapLocation ml: EnemyHolder){
 				
 				EnemyLocations.remove(ml);
-				System.out.println("removed Scary Place");
+				//System.out.println("removed Scary Place");
 			}
 			
 			
@@ -357,10 +375,10 @@ public class Player {
 				
 			}
 			if(scaryThing != null){
-				System.out.println("new Scary Place");
+				//System.out.println("new Scary Place");
 					EnemyLocations.add(scaryThing);
 			}
-			System.out.println("number of scary places is equal to " + EnemyLocations.size());
+			//System.out.println("number of scary places is equal to " + EnemyLocations.size());
 			
 		}
 		
@@ -383,6 +401,7 @@ public class Player {
                 break;
             case Ranger:
                 activateRanger(unit);
+				thisTurnsRangerCount++;
                 break;
             case Rocket:
                 activateRocket(unit);
@@ -450,6 +469,7 @@ public class Player {
         VecUnit nearby = gc.senseNearbyUnits(unitLocation, 70);
 				int enemiesSpotted = 0;
 				int alliesSpotted = 1;
+				if(unit.attackHeat() < 10){
 				if(gc.senseNearbyUnitsByTeam(unitLocation, 70, otherteam).size() != 0){
 			for (int i = 0; i < nearby.size(); i++) {
 				Unit other = nearby.get(i);
@@ -471,6 +491,9 @@ public class Player {
 					alliesSpotted++;
 				}
 			}
+				} else {
+					alliesSpotted += (gc.senseNearbyUnitsByTeam(unitLocation, 70, ourTeam).size());
+				}
 				}
         if (adjacentRockets.size() != 0) { 
             for (int i = 0; i < adjacentRockets.size(); i++) {
@@ -482,7 +505,7 @@ public class Player {
                 }
             }
         }
-
+				if(unit.movementHeat() < 10){
             MapLocation target = null;
         if ((gc.round() > 700) && (unitLocation.getPlanet() != Planet.Mars)) { 
             VecUnit nearbyRockets = gc.senseNearbyUnitsByType(unit.location().mapLocation(), 2500, UnitType.Rocket);
@@ -501,7 +524,7 @@ public class Player {
             }
 
             if (target != null) {
-							System.out.println("Running to rocket");
+							//System.out.println("Running to rocket");
                 updateHashMaps(unit, target);
                 Direction dir = mapFinder.get(unit).walkOnGrid(-1); 
                 moveUnit(unit, dir);
@@ -511,14 +534,10 @@ public class Player {
 				long distance = 2500;
             target = null;
 						Iterator it;
-						if(alliesSpotted > enemiesSpotted){
+						if(alliesSpotted > enemiesSpotted && alliesSpotted > 4 + (gc.round()/50)){
 							it = EnemyLocations.iterator();
 							//System.out.println("attacking Scary Place");
-						}
-						else {
-							it = BaseLocations.iterator();
-						}
-            while (it.hasNext()) {
+							while (it.hasNext()) {
                 MapLocation attackLocation = (MapLocation) it.next();
 
 								long travelDistance = unitLocation.distanceSquaredTo(attackLocation);
@@ -528,21 +547,27 @@ public class Player {
                         target = attackLocation;
                     }
 										
-            }
+							}
 
-            if (target != null && currentlyPileDriving) {
-					System.out.println("attacking location");
+							if (target != null && currentlyPileDriving) {
+						//System.out.println("attacking location");
+								
+									updateHashMaps(unit, target);
+									Direction direction = mapFinder.get(unit).walkOnGrid(-1); 
+									moveUnit(unit, direction);
+
+									return;
+							}
+						}
+						else {
 							
-                updateHashMaps(unit, target);
-                Direction direction = mapFinder.get(unit).walkOnGrid(-1); 
-                moveUnit(unit, direction);
-
-                return;
-            }
-		else if(gc.senseNearbyUnitsByType(unit.location().mapLocation(), 60, UnitType.Ranger).size() > 0) {
+							moveUnit(unit, crowdedMap.walkOnGrid(-1, unit));
+						}
+            
+		if(gc.senseNearbyUnitsByType(unit.location().mapLocation(), 2, UnitType.Ranger).size() > 0) {
 			moveUnit(unit, explorationMap.walkOnGrid(-1, unit));					
 		}
-				
+				}
         return;
     }
 
@@ -562,16 +587,16 @@ public class Player {
 
         // If Health is low take off
         if (unit.health() <= 100) {
-					System.out.println("panicking");
+					//System.out.println("panicking");
             MapLocation landingZone = findLandingZone();
 						if(landingZone != null)
 						{
-							System.out.println("landing zone returned");
+							//System.out.println("landing zone returned");
 						}
             if ((landingZone != null) && gc.canLaunchRocket(unit.id(), landingZone)) {
                 gc.launchRocket(unit.id(), landingZone);
                 rocketList.remove(unitLocation);
-								System.out.println("rocket left in panic");
+								//System.out.println("rocket left in panic");
                 return;
             }
         }
@@ -579,16 +604,16 @@ public class Player {
         // If the rocket is full and no one is around it take off 
         else if ((gc.round() == 749) || ((unit.structureGarrison().size() == unit.structureMaxCapacity()) && (gc.senseNearbyUnitsByTeam(unitLocation, 1, ourTeam).size() == 0))) {
 					
-					System.out.println("rocket full");
+					//System.out.println("rocket full");
             MapLocation landingZone = findLandingZone();
 						if(landingZone != null)
 						{
-							System.out.println("landing zone returned");
+							//System.out.println("landing zone returned");
 						}
             if ((landingZone != null) && gc.canLaunchRocket(unit.id(), landingZone)) {
                 gc.launchRocket(unit.id(), landingZone);
                 rocketList.remove(unitLocation);
-								System.out.println("rocket left calmly");
+								//System.out.println("rocket left calmly");
                 return;
             }
         }
@@ -646,10 +671,13 @@ public class Player {
             // Build new Factory
             else if (((gc.karbonite() > NORMAL_FACTORY_THRESHHOLD && factoryCount <= MAX_FACTORY_COUNT) || gc.karbonite() > OVERLOAD_FACTORY_THRESHHOLD) && adjacentFactories.size() == 0 ){
                 for (Direction direction : Direction.values()) {
-                    if (gc.canBlueprint(unit.id(), UnitType.Factory, direction)){
-                        gc.blueprint(unit.id(), UnitType.Factory, direction);
-                        break;
-                    }
+									  if(isOpenSquare(unitLocation.add(direction))){
+												if (gc.canBlueprint(unit.id(), UnitType.Factory, direction)){
+														gc.blueprint(unit.id(), UnitType.Factory, direction);
+														BaseLocations.add(unitLocation.add(direction));
+														break;
+												}
+										}
                 }
             }
 
@@ -734,7 +762,7 @@ public class Player {
             }
 
             if (target != null) {
-								System.out.println("Finding a factory");
+								//System.out.println("Finding a factory");
                 updateHashMaps(unit, target);
                 Direction dir = mapFinder.get(unit).walkOnGrid(-1); 
                 moveUnit(unit, dir);
@@ -768,14 +796,14 @@ public class Player {
                 updateHashMaps(unit, target);
                 Direction direction = mapFinder.get(unit).walkOnGrid(-1); 
                 moveUnit(unit, direction);
-								System.out.println("Finding resources");
+								//System.out.println("Finding resources");
 
                 return;
             }
 
 			//move away from factories and rockets
 			moveUnit(unit, crowdedMap.walkOnGrid(-1, unit));
-														System.out.println("decrowding");
+														//System.out.println("decrowding");
 
         }
         return;			
@@ -836,14 +864,14 @@ public class Player {
 					{
 						MapLocation unitLocation = unit.location().mapLocation();
 						TeamLocations.add(unitLocation);
-						System.out.println("Added new init unit for team " + t);
+						//System.out.println("Added new init unit for team " + t);
 					}
 				}
         return TeamLocations;
     }
 
     public static MapLocation findLandingZone() {
-			System.out.println("Finding a landing zone");
+			//System.out.println("Finding a landing zone");
         // Pick a spot on mars
         
         PlanetMap mars = gc.startingMap(Planet.Mars);
@@ -853,13 +881,13 @@ public class Player {
 								MapLocation landingZone = new MapLocation(Planet.Mars, x, y);
                 if ((mars.isPassableTerrainAt(landingZone) == 1) && (!gc.canSenseLocation(landingZone) || gc.senseUnitAtLocation(landingZone) == null) && !landingZones.contains(landingZone)) {
 
-								System.out.println("zone at " + x + " " + y + " looks ok");
+								//System.out.println("zone at " + x + " " + y + " looks ok");
                     // Check that units can be unloaded from it
                     boolean isLandingZone = false;
                     for (Direction direction : Direction.values()) {
                         MapLocation nearbySpace = landingZone.add(direction);
 												if(mars.onMap(nearbySpace)){
-													System.out.println("nearby zone is on map");
+													//System.out.println("nearby zone is on map");
 																isLandingZone = ((mars.isPassableTerrainAt(nearbySpace) == 1) && (!gc.canSenseLocation(landingZone) || gc.senseUnitAtLocation(landingZone) == null));
 																if(isLandingZone){
 																	break;
@@ -868,21 +896,21 @@ public class Player {
                     }
 
                     if(isLandingZone) {
-											System.out.println("was landing zone");
+											//System.out.println("was landing zone");
 											
 											if(landingZone != null)
 						{
-							System.out.println("landing zone verified");
+							//System.out.println("landing zone verified");
 						}
                         landingZones.add(landingZone);
                         return landingZone;
                     }
-										System.out.println("wasnt ok");
+										//System.out.println("wasnt ok");
                 }
             }  
         }  
 				
-								System.out.println("no landing zones to be had");
+								//System.out.println("no landing zones to be had");
         return null;
     }
 
@@ -892,4 +920,16 @@ public class Player {
         }
         return;
     }
+		
+		public static boolean isOpenSquare(MapLocation ml) {
+        for(Direction d: Direction.values()){						
+						MapLocation newML = ml.add(d);
+						//if the node exists and has no text and is pathable
+						if(!PM.onMap(newML) || PM.isPassableTerrainAt(newML) == 0){
+							return false;
+						}
+					}
+        return true;
+    }
+		
 }
