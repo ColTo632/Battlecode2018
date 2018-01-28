@@ -8,15 +8,15 @@ public class Player {
 	//Important global variables
     private static long MAX_WORKER_COUNT = 15;
 
-    private List<Unit> knightList = new ArrayList<>();
-    private List<Unit> mageList = new ArrayList<>();
-    private List<Unit> rangerList = new ArrayList<>();
+    private static List<Unit> knightList = new ArrayList<>();
+    private static List<Unit> mageList = new ArrayList<>();
+    private static List<Unit> rangerList = new ArrayList<>();
 
-    private List<Unit> workerList = new ArrayList<>();
-    private List<Unit> healerList = new ArrayList<>();
+    private static List<Unit> workerList = new ArrayList<>();
+    private static List<Unit> healerList = new ArrayList<>();
 
-    private List<Unit> factoryList = new ArrayList<>();
-    private List<Unit> rocketList = new ArrayList<>();
+    private static List<Unit> factoryList = new ArrayList<>();
+    private static List<Unit> rocketList = new ArrayList<>();
 
     private static long MAX_FACTORY_COUNT = 3;		
     private static long workerCount = 0;
@@ -38,9 +38,8 @@ public class Player {
     private static HashMap<Unit, MapHandler> mapFinder = new HashMap<Unit, MapHandler>();
     private static HashMap<MapLocation, Long> resourceDeposits;
 	private static List<MapLocation> EnemyLocations;
-	private static List<MapLocation> EnemyLocations;
 	private static List<MapLocation> BaseLocations;
-    private static List<MapLocation> rocketList = new LinkedList<MapLocation>();
+    private static List<MapLocation> rocketLocList = new ArrayList<>();
     private static HashSet<MapLocation> landingZones = new HashSet<MapLocation>();
 
 	private static PlanetMap PM;  
@@ -108,15 +107,11 @@ public class Player {
             for (int i = 0; i < units.size(); i++) {
                 Unit unit = units.get(i);
 
-                activateUnit(unit);
-            }
+                addUnit(unit);
+            }     
 
 		while (true) {	
-			
-			
-			
-						
-						
+				
 			//workerCount = gc.senseNearbyUnitsByType(new MapLocation(Planet.Earth, 0,0), 100, UnitType.Worker).size();
 			System.out.println("Current round: "+gc.round() +" workerCount: "+ workerCount+" k: "+ gc.karbonite());
 			thisTurnsWorkerCount = 0;
@@ -127,7 +122,7 @@ public class Player {
                 AsteroidStrike strike = strikePattern.asteroid(round);
                 resourceDeposits.put(strike.getLocation(), strike.getKarbonite());
             }
-
+            /*
 			if(round % 20 == 1) {				
 				pileDrive();
 				deCrowd();
@@ -139,7 +134,7 @@ public class Player {
 				explore();
 				currentlyPileDriving = !currentlyPileDriving;
 			}
-			
+			*/
 			if((round > 200) && (round % 22 == 0)) {
                 RANGER_THRESHHOLD = 320;
                 NORMAL_FACTORY_THRESHHOLD = 420;
@@ -165,7 +160,7 @@ public class Player {
 
 			for (int i = 0; i < knightList.size(); i++) {
                 Unit unit = knightList.get(i);
-                if (!gc.canSenseUnit(unit.id)) {
+                if (!gc.canSenseUnit(unit.id())) {
                     knightList.remove(i);
                     i--;
                 }
@@ -177,7 +172,7 @@ public class Player {
 
             for (int i = 0; i < mageList.size(); i++) {
                 Unit unit = mageList.get(i);
-                if (!gc.canSenseUnit(unit.id)) {
+                if (!gc.canSenseUnit(unit.id())) {
                     mageList.remove(i);
                     i--;
                 }
@@ -189,7 +184,7 @@ public class Player {
 
             for (int i = 0; i < rangerList.size(); i++) {
                 Unit unit = rangerList.get(i);
-                if (!gc.canSenseUnit(unit.id)) {
+                if (!gc.canSenseUnit(unit.id())) {
                     rangerList.remove(i);
                     i--;
                 }
@@ -201,7 +196,7 @@ public class Player {
                     
             for (int i = 0; i < workerList.size(); i++) {
                 Unit unit = workerList.get(i);
-                if (!gc.canSenseUnit(unit.id)) {
+                if (!gc.canSenseUnit(unit.id())) {
                     workerList.remove(i);
                     i--;
                 }
@@ -213,7 +208,7 @@ public class Player {
 
             for (int i = 0; i < healerList.size(); i++) {
                 Unit unit = healerList.get(i);
-                if (!gc.canSenseUnit(unit.id)) {
+                if (!gc.canSenseUnit(unit.id())) {
                     healerList.remove(i);
                     i--;
                 }
@@ -226,7 +221,7 @@ public class Player {
 
             for (int i = 0; i < factoryList.size(); i++) {
                 Unit unit = factoryList.get(i);
-                if (!gc.canSenseUnit(unit.id)) {
+                if (!gc.canSenseUnit(unit.id())) {
                     factoryList.remove(i);
                     i--;
                 }
@@ -238,7 +233,7 @@ public class Player {
 
             for (int i = 0; i < rocketList.size(); i++) {
                 Unit unit = rocketList.get(i);
-                if (!gc.canSenseUnit(unit.id)) {
+                if (!gc.canSenseUnit(unit.id())) {
                     rocketList.remove(i);
                     i--;
                 }
@@ -389,6 +384,33 @@ public class Player {
         }
     }
 
+        public static void addUnit(Unit unit) {
+        UnitType type = unit.unitType();
+        switch (type) { 
+            case Factory: 
+                factoryList.add(unit);
+                break;
+            case Healer:
+                healerList.add(unit);
+                break;
+            case Knight:
+                knightList.add(unit);
+                break;
+            case Mage:
+                mageList.add(unit);
+                break;
+            case Ranger:
+                rangerList.add(unit);
+                break;
+            case Rocket:
+                rocketList.add(unit);
+                break;
+            case Worker:
+                workerList.add(unit);
+                break;
+        }
+    }
+
     public static void activateFactory(Unit unit) {
 
         // If no workers exist build one.  
@@ -406,6 +428,7 @@ public class Player {
             for(Direction direction : Direction.values()) {
                 if (gc.canUnload(unit.id(), direction)){
                     gc.unload(unit.id(), direction);
+                    addUnit(gc.senseUnitAtLocation(unit.location().mapLocation().add(direction)));
                     activateUnit(gc.senseUnitAtLocation(unit.location().mapLocation().add(direction)));
                 }
             }
@@ -545,8 +568,8 @@ public class Player {
         }
         MapLocation unitLocation = location.mapLocation();
 
-        if(!rocketList.contains(unitLocation)) {
-            rocketList.add(unitLocation);
+        if(!rocketLocList.contains(unitLocation)) {
+            rocketLocList.add(unitLocation);
         }
 
         // If Health is low take off
@@ -554,7 +577,7 @@ public class Player {
             MapLocation landingZone = findLandingZone();
             if ((landingZone != null) && gc.canLaunchRocket(unit.id(), landingZone)) {
                 gc.launchRocket(unit.id(), landingZone);
-                rocketList.remove(unitLocation);
+                rocketLocList.remove(unitLocation);
 								System.out.println("rocket left in panic");
                 return;
             }
@@ -565,7 +588,7 @@ public class Player {
             MapLocation landingZone = findLandingZone();
             if ((landingZone != null) && gc.canLaunchRocket(unit.id(), landingZone)) {
                 gc.launchRocket(unit.id(), landingZone);
-                rocketList.remove(unitLocation);
+                rocketLocList.remove(unitLocation);
 								System.out.println("rocket left calmly");
                 return;
             }
@@ -576,6 +599,7 @@ public class Player {
             for(Direction direction : Direction.values()) {
                 if (gc.canUnload(unit.id(), direction)){
                     gc.unload(unit.id(), direction);
+                    addUnit(gc.senseUnitAtLocation(unit.location().mapLocation().add(direction)));
                     activateUnit(gc.senseUnitAtLocation(unit.location().mapLocation().add(direction)));
                 }
             }
@@ -615,7 +639,11 @@ public class Player {
                     if (gc.canReplicate(unit.id(), direction)){
                         workerCount++;
                         gc.replicate(unit.id(), direction);
-                        activateWorker(gc.senseUnitAtLocation(unitLocation.add(direction)));
+                        if (gc.hasUnitAtLocation(unitLocation.add(direction))) {
+                        Unit newWorker = gc.senseUnitAtLocation(unitLocation.add(direction));
+                            addUnit(newWorker);
+                            activateWorker(newWorker);
+                        }
                         break;
                     }
                 }
